@@ -22,7 +22,7 @@ AM_PROG_CC_C_O
 # Checks for libraries.
 
 # Boost
-BOOST_REQUIRE([1.4])
+BOOST_REQUIRE([1.44])
 BOOST_SYSTEM()
 BOOST_FILESYSTEM()
 

@@ -4,13 +4,13 @@ pkgconfig_DATA = libfex.pc
 lib_LTLIBRARIES = libfex.la
 
 include_HEADERS = GaborFilter.hpp \
-				  ImageHelpers.hpp \
-				  Classifier.hpp \
-				  LDAQR.hpp \
-				  MathHelpers.hpp \
-				  DebugHelpers.hpp \
-				  FilterSet.hpp \
-				  IOHelpers.hpp
+                  ImageHelpers.hpp \
+                  Classifier.hpp \
+                  LDAQR.hpp \
+                  MathHelpers.hpp \
+                  DebugHelpers.hpp \
+                  FilterSet.hpp \
+                  IOHelpers.hpp
 
 libfex_la_SOURCES = DebugHelpers.cpp IOHelpers.cpp
 libfex_la_CPPFLAGS = $(BOOST_CPPFLAGS) $(OPENCV_CFLAGS)
