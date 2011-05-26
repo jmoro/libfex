@@ -4,8 +4,8 @@ libdir=@libdir@
 includedir=@includedir@
 Name: libfex
 URL: 
-Description: A small librery for facial feature extraction.
+Description: A small library for facial feature extraction.
 Version: @PACKAGE_VERSION@
-Requires: libflaimtk >= 1.0
+Requires: opencv >= 2.2.0
 Libs: -L${libdir} -lfex
 Cflags: -I${includedir}
