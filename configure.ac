@@ -10,7 +10,7 @@ LT_INIT([dlopen])
 AC_LANG([C++])
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([src/Core.hpp])
+AC_CONFIG_SRCDIR([src/GaborFilter.hpp])
 AC_CONFIG_HEADERS([config.h])
 
 
