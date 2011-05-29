@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT([libfex], [0.0.1], [javier.moro@udc.es])
+AC_INIT([libfex], [0.0.2], [javier.moro@udc.es])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 LT_PREREQ([2.2])
 LT_INIT([dlopen])
