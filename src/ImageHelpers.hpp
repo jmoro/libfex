@@ -26,9 +26,6 @@
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
 #include "opencv2/opencv.hpp"
-//#include "FilterSet.hpp"
-//#include "GaborFilter.hpp"
-#include <map>
 
 namespace fex
 {
@@ -55,19 +52,17 @@ public:
     		Mat_<complex<_Tp> > filter, Mat_<Vec<_Tp, 2> >& dst);
 
     template<typename _Tp>
+    static void convolutionComplexFilter(
+            Mat_<Vec<_Tp, 2> > complexDFTImage,
+            Mat_<Vec<_Tp, 2> > complexDFTFilter, Mat_<Vec<_Tp, 2> >& dst);
+
+    template<typename _Tp>
 	static void downSample(Mat_<Vec<_Tp, 2> > image,
 			Mat_<Vec<_Tp, 2> >& dst, double ratio, int method=INTER_LANCZOS4);
 
     template<typename _Tp>
     static void zmuNormalization(Mat_<Vec<_Tp, 2> > image,
     		Mat_<Vec<_Tp, 2> >& dst);
-
-    /*
-    template<typename _Tp>
-    static void imageApplyFilterSet(Mat_<_Tp> image,
-    		FilterSet<_Tp> filterSet, Mat_<_Tp>& dst,
-    		bool needZMUNorm, bool needDownSampl, _Tp ratio=1.0f);
-    */
 };
 
 template<typename _Tp>
@@ -131,6 +126,19 @@ void ImageHelpers::convolutionComplexFilter(Mat_<_Tp> image,
 }
 
 template<typename _Tp>
+void ImageHelpers::convolutionComplexFilter(
+        Mat_<Vec<_Tp, 2> > complexDFTImage,
+        Mat_<Vec<_Tp, 2> > complexDFTFilter, Mat_<Vec<_Tp, 2> >& dst)
+{
+    Mat_<Vec<_Tp, 2> >
+    spectrum(complexDFTImage.size(), complexDFTImage.type());
+    cv::mulSpectrums(complexDFTImage, complexDFTFilter, spectrum,
+            DFT_COMPLEX_OUTPUT);
+
+    idft(spectrum, dst, DFT_COMPLEX_OUTPUT + DFT_SCALE);
+}
+
+template<typename _Tp>
 void ImageHelpers::downSample(Mat_<Vec<_Tp, 2> >image,
 		Mat_<Vec<_Tp, 2> >& dst, double ratio, int method)
 {
@@ -167,64 +175,6 @@ void ImageHelpers::zmuNormalization(Mat_<Vec<_Tp, 2> > image,
     dst = (image - meanMatrix)/stdMatrix;
 }
 
-/*
-template<typename _Tp>
-void ImageHelpers::imageApplyFilterSet(Mat_<_Tp> image,
-		FilterSet<_Tp> filterSet, Mat_<_Tp>& dst,
-		bool needZMUNorm, bool needDownSampl, _Tp ratio)
-{
-
-	// Move this typedef somewhere else?
-	typedef typename map<pair<int, int>, GaborFilter_<_Tp> >::iterator
-			mapPairGaborIter;
-
-	map<pair<int, int>, GaborFilter_<_Tp> > filters =
-			filterSet.getFilterSet();
-
-	int numFilters = filters.size();
-	int rowFilteredImageSize = (((Mat)image).rows)*
-			(((Mat)image).cols);
-	if(needDownSampl)
-	{
-		rowFilteredImageSize *= pow(ratio,2);
-	}
-
-
-	dst.create(numFilters, rowFilteredImageSize);
-
-	mapPairGaborIter itMap = filters.begin(), itMap_end = filters.end();
-
-	int i=0;
-	GaborFilter_<_Tp> filter;
-	Mat_<complex<_Tp> > f;
-	Mat_<Vec<_Tp, 2> > tmpResult;
-	Mat_<Vec<_Tp, 2> > normalizedImage;
-	Mat_<_Tp> features;
-	for(; itMap != itMap_end; ++itMap)
-	{
-		filter = (*itMap).second;
-		f = filter.getFilter();
-		convolutionComplexFilter(image, f, tmpResult);
-		if(needDownSampl)
-		{
-			downSample(tmpResult, tmpResult, ratio);
-		}
-		if(needZMUNorm)
-		{
-			zmuNormalization(tmpResult, normalizedImage);
-			magnitudeComplexImage(normalizedImage, features);
-		}
-		else {
-			magnitudeComplexImage(tmpResult, features);
-		}
-		Mat_<_Tp> tmp = dst.row(i);
-
-		((Mat)features.reshape(1)).copyTo(tmp);
-		i++;
-	}
-
-}
-*/
 }
 
 #endif /* IMAHEHELPERS_HPP_ */

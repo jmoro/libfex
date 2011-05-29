@@ -27,6 +27,7 @@
 // is way too much
 #include "opencv2/opencv.hpp"
 #include "FeatureSet.hpp"
+#include "FilteringHelpers.hpp"
 
 namespace fex {
 
@@ -139,7 +140,7 @@ void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 	// Iteration over the images to generate the features representing the image
 	for(; itVec != itVec_end; ++itVec)
 	{
-		ImageHelpers::imageApplyFilterSet((*itVec) , this->mFilterSet,
+		FilteringHelpers::imageApplyFilterSet((*itVec) , this->mFilterSet,
 		        tmpResult, this->mNeedZMUNormalization,
 		        this->mNeedDownSampling, this->mDownSamplingRatio);
 
