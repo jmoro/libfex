@@ -25,6 +25,7 @@
 
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
+#include "ImageHelpers.hpp"
 #include "opencv2/opencv.hpp"
 // TODO: Remove this dependence with typeinfo here, create an utility function.
 #include <typeinfo>
@@ -217,9 +218,11 @@ void GaborFilter_<_Tp>::init(Mat_<complex<_Tp> > & filter,
     mFilterSizeY = filterSizeY;
     mKMax = kMax;
     mSigma = sigma;
+    // We generate the filter
     generateFilter(mFilter, mScale, mOrientation, mFilterSizeX,
             mFilterSizeY, mKMax, mSigma);
-    //TODO generate filter's FFT
+    // We generate it's dft
+    ImageHelpers::complexDFT(this->mFilter, this->mFilterFFT);
 }
 
 template<typename _Tp>
@@ -254,37 +257,26 @@ void GaborFilter_<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
     Mat_<_Tp> imagWavelet(filterSizeX, filterSizeY);
 
     result.create(filterSizeX, filterSizeY);
-    //this->mComplexFilter.create(filterSizeX, filterSizeY);
 
-    for(int x=0; x<filterSizeX; x++)
-        {
-        for (int y=0; y<filterSizeY; y++)
-        {
-            offsetXVal = x - offsetX;
-            offsetYVal = y - offsetY;
-            magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
-            commonPart = kS * exp(kSHalf * (magnitude));
+    int numberColumns = filterSizeY*filterSizeX;
+    int numberLines = 1;
 
+    complex<_Tp>* data = ((Mat)result).ptr<complex<_Tp> >(0);
 
-            complexResult = commonPart *
-                    (exp(1.0*i * (kReal * offsetYVal) + (kImag * offsetXVal))
-                            - exp(-0.5 * sSquare));
+    for (int index=0; index<numberColumns; index++)
+    {
+        offsetXVal = (index/filterSizeY) - offsetX;
+        offsetYVal = (index%filterSizeY) - offsetY;
 
+        magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
+        commonPart = kS * exp(kSHalf * (magnitude));
 
-            result(x,y) = complexResult;
-/*
-            realPart = cos (1.0f * ((kReal * (offsetYVal)) +
-                    (kImag * (offsetXVal)))) - exp(sSquareHalf);
-            imagPart = sin (1.0f * ((kReal * (offsetXVal)) +
-                    (kImag * (offsetYVal))));
+        complexResult = commonPart *
+                (exp(1.0*i * (kReal * offsetYVal) + (kImag * offsetXVal))
+                - exp(-0.5 * sSquare));
 
-            realWavelet(y,x) = commonPart * realPart;
-            imagWavelet(y,x) = commonPart * imagPart;*/
-        }
+        *data++ = complexResult;
     }
-/*
-    Mat_<_Tp> planes[] = {realWavelet, imagWavelet};
-    merge(planes, 2, result);*/
 }
 
 }

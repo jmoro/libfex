@@ -26,8 +26,8 @@
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
 #include "opencv2/opencv.hpp"
-#include "FilterSet.hpp"
-#include "GaborFilter.hpp"
+//#include "FilterSet.hpp"
+//#include "GaborFilter.hpp"
 #include <map>
 
 namespace fex
@@ -62,11 +62,12 @@ public:
     static void zmuNormalization(Mat_<Vec<_Tp, 2> > image,
     		Mat_<Vec<_Tp, 2> >& dst);
 
+    /*
     template<typename _Tp>
     static void imageApplyFilterSet(Mat_<_Tp> image,
     		FilterSet<_Tp> filterSet, Mat_<_Tp>& dst,
     		bool needZMUNorm, bool needDownSampl, _Tp ratio=1.0f);
-
+    */
 };
 
 template<typename _Tp>
@@ -166,7 +167,7 @@ void ImageHelpers::zmuNormalization(Mat_<Vec<_Tp, 2> > image,
     dst = (image - meanMatrix)/stdMatrix;
 }
 
-
+/*
 template<typename _Tp>
 void ImageHelpers::imageApplyFilterSet(Mat_<_Tp> image,
 		FilterSet<_Tp> filterSet, Mat_<_Tp>& dst,
@@ -223,7 +224,7 @@ void ImageHelpers::imageApplyFilterSet(Mat_<_Tp> image,
 	}
 
 }
-
+*/
 }
 
 #endif /* IMAHEHELPERS_HPP_ */
