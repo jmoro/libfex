@@ -20,11 +20,17 @@ AC_PROG_INSTALL
 AM_PROG_CC_C_O
 
 # Checks for libraries.
-
-# Boost
-BOOST_REQUIRE([1.44])
-BOOST_SYSTEM()
-BOOST_FILESYSTEM()
+AC_CHECK_HEADER(armadillo,,
+                [AC_MSG_ERROR([ERROR: Armadillo headers required; use '-Iincludedir' in CXXFLAGS for unusual locations.])])
+## second check the lib itself
+arma_savedlibs="$LIBS"
+ARMADILLO_LIBS="-larmadillo"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <armadillo>]], 
+                [[arma::mat A = arma::eye<arma::mat>(5,5);]])],
+                [],
+                [AC_MSG_ERROR([ERROR: Armadillo test program did not link, maybe add '-Llibdir' to LDFLAGS.])])
+ARMADILLO_LIBS="$arma_savedlibs"
+AC_SUBST([ARMADILLO_LIBS],["${ARMADILLO_LIBS} -larmadillo"])
 
 # OpenCV
 PKG_CHECK_MODULES(OPENCV, opencv)
@@ -41,6 +47,7 @@ AC_C_INLINE
 AC_CHECK_FUNCS([pow sqrt])
 
 AC_CONFIG_FILES([Makefile
+				 samples/Makefile
                  src/Makefile
                  src/libfex.pc])
 AC_OUTPUT

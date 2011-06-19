@@ -2,6 +2,11 @@
 
 	First API design and initial implementation.
 
+2011-06-19	Javier Moro Sotelo	<javier.moro@udc.es>
+
+	Removed dependency with Boost.
+	Added dependency with libarmadillo for QR decomposition.
+
 --
 Copyright (c) 2011 Javier Moro Sotelo
 

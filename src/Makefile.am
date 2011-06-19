@@ -10,10 +10,9 @@ include_HEADERS = GaborFilter.hpp \
                   MathHelpers.hpp \
                   DebugHelpers.hpp \
                   FilteringHelpers.hpp \
-                  FilterSet.hpp \
-                  IOHelpers.hpp
+                  FilterSet.hpp
 
-libfex_la_SOURCES = DebugHelpers.cpp IOHelpers.cpp
-libfex_la_CPPFLAGS = $(BOOST_CPPFLAGS) $(OPENCV_CFLAGS)
-libfex_la_LIBADD = $(BOOST_SYSTEM_LIBS) $(BOOST_FILESYSTEM_LIBS) $(OPENCV_LIBS)
+libfex_la_SOURCES = DebugHelpers.cpp
+libfex_la_CPPFLAGS = $(OPENCV_CFLAGS)
+libfex_la_LIBADD = $(OPENCV_LIBS) $(ARMADILLO_LIBS)
 libfex_la_LDFLAGS = -version-info 0:1:0

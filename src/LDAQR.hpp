@@ -175,7 +175,7 @@ Mat_<int> LDAQR<_Tp>::predict(Mat_<_Tp> observations)
 
         multiply(A,A,A);
 
-        D.col(j) = log(priorProb)- (0.5)*(
+        D.col(j) = log(priorProb) - (0.5)*(
                 MathHelpers::sum2D(A,MathHelpers::MATH_BY_ROWS) +
                 logSigma);
         j++;

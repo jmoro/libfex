@@ -1,5 +1,11 @@
 NEWS - List of user-visible changes beetween releases of libfex
 
+New in 0.0.2 2011-06-19:
+
+* Removed boost dependency.
+* Added libarmadillo.
+* Big performance improvements.
+
 New in 0.0.1 2011-05-05:
 
 * First release of libfex.
