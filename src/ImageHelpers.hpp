@@ -26,6 +26,7 @@
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
 #include "opencv2/opencv.hpp"
+#include "MathHelpers.hpp"
 
 namespace fex
 {
@@ -58,7 +59,7 @@ public:
 
     template<typename _Tp>
 	static void downSample(Mat_<Vec<_Tp, 2> > image,
-			Mat_<Vec<_Tp, 2> >& dst, double ratio, int method=INTER_LANCZOS4);
+			Mat_<Vec<_Tp, 2> >& dst, double ratio, int method=INTER_NEAREST);
 
     template<typename _Tp>
     static void zmuNormalization(Mat_<Vec<_Tp, 2> > image,
@@ -150,9 +151,8 @@ void ImageHelpers::downSample(Mat_<Vec<_Tp, 2> >image,
 	Mat_<_Tp> realResized;
 	Mat_<_Tp> imaginaryResized;
 
-
-	resize(planes[0], realResized, Size(), ratio, ratio);
-	resize(planes[1], imaginaryResized, Size(), ratio, ratio);
+	resize(planes[0], realResized, Size(), ratio, ratio, method);
+	resize(planes[1], imaginaryResized, Size(), ratio, ratio, method);
 
 	Mat_<_Tp> planesResized[] = {realResized, imaginaryResized};
 
@@ -163,16 +163,32 @@ template<typename _Tp>
 void ImageHelpers::zmuNormalization(Mat_<Vec<_Tp, 2> > image,
 		Mat_<Vec<_Tp, 2> >& dst)
 {
-    Scalar_<_Tp> mean;
-    Scalar_<_Tp> std;
+    _Tp meanReal;
+    _Tp meanImag;
+    _Tp stdReal;
+    _Tp stdImag;
+    _Tp std;
 
-    meanStdDev(image, mean, std);
+    Mat_<_Tp> realPart;
+    Mat_<_Tp> imaginaryPart;
+    Mat_<_Tp> planes[] = {realPart, imaginaryPart};
+    split(image, planes);
 
-    Mat meanMatrix(image.size(), image.type(), mean);
-    Mat stdMatrix(image.size(), image.type(), std);
+    MathHelpers::stdMean(planes[0], stdReal, meanReal);
+    MathHelpers::stdMean(planes[1] , stdImag , meanImag);
 
-    // FIXME: Not working, fix needed.
-    dst = (image - meanMatrix)/stdMatrix;
+    std = sqrt(pow(stdReal,2) + pow(stdImag,2));
+
+    Mat_<_Tp> dstReal;
+    Mat_<_Tp> dstImaginary;
+
+
+    dstReal = (planes[0] - meanReal) / std;
+    dstImaginary = (planes[1] - meanImag) / std;
+
+    Mat_<_Tp> planes2[] = {dstReal, dstImaginary};
+
+    merge(planes2, 2, dst);
 }
 
 }

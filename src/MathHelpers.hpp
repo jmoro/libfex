@@ -23,10 +23,13 @@
 #ifndef MATHHELPERS_HPP_
 #define MATHHELPERS_HPP_
 
+#include "opencv2/opencv.hpp"
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
 #include <cmath>
 #include <map>
+#include <armadillo>
+#include "DebugHelpers.hpp"
 
 namespace fex
 {
@@ -37,8 +40,8 @@ class MathHelpers
 {
 public:
 
-    const static int MATH_BY_ROWS=0;
-    const static int MATH_BY_COLS=1;
+    const static int MATH_BY_ROWS=2;
+    const static int MATH_BY_COLS=4;
     const static bool MATH_ECON_MODE_ON=true;
     const static bool MATH_ECON_MODE_OFF=false;
 
@@ -62,6 +65,9 @@ public:
     static void cumSum(const Mat_<_Tp>& mat, Mat_<_Tp>& sum);
 
     template<typename _Tp>
+    static void stdMean(Mat_<_Tp> mat, _Tp& std, _Tp& mean);
+
+    template<typename _Tp>
     static _Tp sum1D(Mat_<_Tp> mat);
 
     template<typename _Tp>
@@ -78,12 +84,22 @@ public:
             const Mat& mean);
 
     template<typename _Tp>
+    static void meanNormalize(const Mat_<_Tp>& mat,
+            Mat_<_Tp>& meanNormalizedMat, int flags);
+
+    template<typename _Tp>
     static void getZeroMeanScoresFromPCA(const Mat_<_Tp>& mat,
     		const PCA& pca, Mat_<_Tp>& zeroMeanScores);
 
     template<typename _Tp>
     static void pcaReduceData(const Mat_<_Tp>& mat, const _Tp variability,
             Mat_<_Tp>& reducedData, Mat_<_Tp>& coefficients);
+
+    static void createClassifyingConfussionMatrix(
+            const Mat_<int>& expectedResults,
+            const Mat_<int>& results,
+            const int numClasses,
+            Mat_<int>& confussionMatrix);
 };
 
 template<typename _Tp>
@@ -115,31 +131,26 @@ template<typename _Tp>
 void MathHelpers::QR(const Mat_<_Tp>& A, Mat_<_Tp>& Q, Mat_<_Tp>& R,
         bool econ)
 {
-    int i, j;
     int rows = (Mat(A)).rows;
     int cols = (Mat(A)).cols;
-    Mat_<_Tp> Rtmp = A.clone();
-    Q = Mat_<_Tp>::eye(rows, rows);
-    Mat_<_Tp> tempGivensRot;
+    Mat_<_Tp> At = A.t();
 
-    for(j=0; j<cols; j++)
-    {
-        for(i=rows-1; i>j; i--)
-        {
-            tempGivensRot = givensRotation(Rtmp, i, j);
-            Q=tempGivensRot*Q;
-            Rtmp=tempGivensRot*Rtmp;
-        }
-    }
+    arma::mat AArma(((cv::Mat)At).ptr<_Tp>(0), rows, cols, false);
+
+    arma::mat QArma, RArma;
+
+    arma::qr(QArma, RArma, AArma);
+    Q = Mat_<_Tp>(QArma.n_cols, QArma.n_rows, QArma.memptr()).t();
+    Mat_<_Tp> Rtmp = Mat_<_Tp>(RArma.n_cols, RArma.n_rows, RArma.begin()).t();
+
     if(econ)
     {
-        ((Mat)Rtmp(Range(0, cols), Range(0,cols))).copyTo(R);
+        ((Mat)Rtmp(Range(0, cols), Range(0, cols))).copyTo(R);
 
     }
     else {
         ((Mat)Rtmp).copyTo(R);
     }
-    Q=((Mat)Q).t();
 }
 
 template<typename _Tp>
@@ -153,6 +164,33 @@ void MathHelpers::cumSum(const Mat_<_Tp>& mat, Mat_<_Tp>& sum)
         sum(0,i) = sum(0,i-1) + mat(0,i);
     }
 }
+
+template<typename _Tp>
+void MathHelpers::stdMean(Mat_<_Tp> mat, _Tp& std, _Tp& mean)
+{
+    int rows = ((Mat)mat).rows;
+    int cols = ((Mat)mat).cols;
+    int elems = ((Mat)mat).rows * ((Mat)mat).cols;
+
+    _Tp* data = ((Mat)mat).ptr<_Tp>(0);
+
+    for(int index=0; index<elems; index++)
+    {
+        mean += *data++;
+    }
+
+    mean /= elems;
+
+    data = ((Mat)mat).ptr<_Tp>(0);
+
+    for(int index=0; index<elems; index++)
+    {
+        std += pow((mean - *data++), 2);
+    }
+
+    std = sqrt(std/(elems - 1));
+}
+
 
 template<typename _Tp>
 _Tp MathHelpers::sum1D(Mat_<_Tp> mat)
@@ -277,6 +315,17 @@ Mat_<_Tp> MathHelpers::meanSubstraction(const Mat_<_Tp>& mat,
 }
 
 template<typename _Tp>
+void MathHelpers::meanNormalize(const Mat_<_Tp>& mat,
+        Mat_<_Tp>& meanNormalizedMat, int flags)
+{
+    int takeRows =  (flags & MATH_BY_ROWS) != 0;
+    Mat_<_Tp> mean;
+    reduce(mat, mean, takeRows ? 0 : 1, CV_REDUCE_AVG, mat.type());
+
+    meanNormalizedMat = meanSubstraction(mat, mean);
+}
+
+template<typename _Tp>
 void MathHelpers::getZeroMeanScoresFromPCA(const Mat_<_Tp>& mat,
 		const PCA& pca, Mat_<_Tp>& zeroMeanScores)
 {
@@ -300,13 +349,14 @@ void MathHelpers::pcaReduceData(const Mat_<_Tp>& mat,
     // We need mat.rows -1 dimmensions as much.
     PCA components(mat, Mat(), CV_PCA_DATA_AS_ROW, ((Mat)mat).rows-1);
 
-    Mat_<_Tp> tmpReducedData;
+    Mat_<_Tp> scores;
     Mat_<_Tp> tmpCoefficients;
 
-    getZeroMeanScoresFromPCA(mat, components, tmpReducedData);
+    getZeroMeanScoresFromPCA(mat, components, scores);
 
     components.eigenvectors.copyTo(tmpCoefficients);
-    //TODO: Calculate number of dimmensions needed to achieve certain level of
+
+    //TODO: Calculate number of dimensions needed to achieve certain level of
     // variability.
 
     Mat_<_Tp> cSum;
@@ -314,7 +364,6 @@ void MathHelpers::pcaReduceData(const Mat_<_Tp>& mat,
     MathHelpers::cumSum(eigenValues, cSum);
     _Tp sSum = sum1D(eigenValues);
     Mat_<_Tp> cumVar = cSum / sSum;
-
 
     int numDimm = ((Mat)mat).rows-1;
 
@@ -328,11 +377,39 @@ void MathHelpers::pcaReduceData(const Mat_<_Tp>& mat,
     	}
     }
 
-    ((Mat)tmpReducedData(Range(0, ((Mat)tmpReducedData).rows),
+    ((Mat)scores(Range(0, ((Mat)scores).rows),
             Range(0, numDimm))).copyTo(reducedData);
     ((Mat)tmpCoefficients(Range(0, numDimm),
-                Range(0, ((Mat)tmpCoefficients).cols))).copyTo(coefficients);
+            Range(0, ((Mat)tmpCoefficients).cols))).copyTo(coefficients);
     coefficients = ((Mat)coefficients).t();
+}
+
+void MathHelpers::createClassifyingConfussionMatrix(
+            const Mat_<int>& expectedResults,
+            const Mat_<int>& results,
+            const int numClasses,
+            Mat_<int>& confussionMatrix)
+{
+    CV_Assert((expectedResults.cols == results.cols) &&
+            (expectedResults.rows == results.rows));
+
+    confussionMatrix.create(numClasses, numClasses);
+    confussionMatrix = Mat_<int>::zeros(numClasses, numClasses);
+
+    int* expectedData = (int*) expectedResults.ptr(0);
+    int* actualData = (int*) results.ptr(0);
+
+    int numElements = results.rows * results.cols;
+
+    for (int index=0; index<numElements; index++)
+    {
+        int expeted = *expectedData++;
+        int got = *actualData++;
+
+        // TODO: Normalize classes, so we get convert from ranges
+        confussionMatrix(expeted-1, got-1)++;
+    }
+
 }
 
 }
