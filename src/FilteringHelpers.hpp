@@ -54,10 +54,10 @@ void FilteringHelpers::imageApplyFilterSet(Mat_<_Tp> image,
 {
 
     // Move this typedef somewhere else?
-    typedef typename map<pair<int, int>, GaborFilter_<_Tp> >::iterator
+    typedef typename map<pair<int, int>, GaborFilter<_Tp> >::iterator
             mapPairGaborIter;
 
-    map<pair<int, int>, GaborFilter_<_Tp> > filters =
+    map<pair<int, int>, GaborFilter<_Tp> > filters =
             filterSet.getFilterSet();
 
     int numFilters = filters.size();
@@ -74,7 +74,7 @@ void FilteringHelpers::imageApplyFilterSet(Mat_<_Tp> image,
     mapPairGaborIter itMap = filters.begin(), itMap_end = filters.end();
 
     int i=0;
-    GaborFilter_<_Tp> filter;
+    GaborFilter<_Tp> filter;
     Mat_<Vec<_Tp, 2> > imageFFT;
     ImageHelpers::complexDFT(image, imageFFT);
     Mat_<Vec<_Tp, 2> > fFFT;

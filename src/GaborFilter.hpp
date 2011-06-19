@@ -42,7 +42,7 @@ using namespace cv;
  *
  * Using int type is not allowed, and will cause a runtime error.
  */
-template<typename _Tp> class GaborFilter_
+template<typename _Tp> class GaborFilter
 {
 public:
 
@@ -54,14 +54,14 @@ public:
     /*
      * Constructors
      */
-    GaborFilter_();
-    GaborFilter_(int _scale, int _orientation, int _filterSize,
+    GaborFilter();
+    GaborFilter(int _scale, int _orientation, int _filterSize,
             _Tp _kMax, _Tp _sigma);
-    GaborFilter_(int _scale, int _orientation, int _filterSizeX,
+    GaborFilter(int _scale, int _orientation, int _filterSizeX,
             int _filterSizeY, _Tp _kMax, _Tp _sigma);
     // TODO: New types of constructors, allow to create a filter from a
     // Mat object, a IPLImage, etc...
-    virtual ~GaborFilter_();
+    virtual ~GaborFilter();
 
     /*
      * Attribute getters
@@ -126,19 +126,19 @@ private:
 /**************
  * Constructors
  **************/
-template<typename _Tp> GaborFilter_<_Tp>::GaborFilter_()
+template<typename _Tp> GaborFilter<_Tp>::GaborFilter()
 {
-    GaborFilter_<_Tp>::checkForFloatingPoint();
+    GaborFilter<_Tp>::checkForFloatingPoint();
 }
 
-template<typename _Tp> GaborFilter_<_Tp>::GaborFilter_(int _scale,
+template<typename _Tp> GaborFilter<_Tp>::GaborFilter(int _scale,
         int _orientation, int _filterSize, _Tp _kMax, _Tp _sigma)
 {
     init(mFilter, mFilterFFT, _scale, _orientation, _filterSize, _filterSize,
             _kMax, _sigma);
 }
 
-template<typename _Tp> GaborFilter_<_Tp>::GaborFilter_(int _scale,
+template<typename _Tp> GaborFilter<_Tp>::GaborFilter(int _scale,
         int _orientation, int _filterSizeX, int _filterSizeY, _Tp _kMax,
         _Tp _sigma)
 {
@@ -146,7 +146,7 @@ template<typename _Tp> GaborFilter_<_Tp>::GaborFilter_(int _scale,
         _kMax, _sigma);
 }
 
-template<typename _Tp> GaborFilter_<_Tp>::~GaborFilter_()
+template<typename _Tp> GaborFilter<_Tp>::~GaborFilter()
 {
     // Nothing to see here... keep walking!!!
 }
@@ -155,49 +155,49 @@ template<typename _Tp> GaborFilter_<_Tp>::~GaborFilter_()
  * Attribute getters
  *******************/
 template<typename _Tp>
-inline int GaborFilter_<_Tp>::getScale() const
+inline int GaborFilter<_Tp>::getScale() const
 {
     return mScale;
 }
 
 template<typename _Tp>
-inline int GaborFilter_<_Tp>::getOrientation() const
+inline int GaborFilter<_Tp>::getOrientation() const
 {
     return mOrientation;
 }
 
 template<typename _Tp>
-inline int GaborFilter_<_Tp>::getFilterSizeX() const
+inline int GaborFilter<_Tp>::getFilterSizeX() const
 {
     return mFilterSizeX;
 }
 
 template<typename _Tp>
-inline int GaborFilter_<_Tp>::getFilterSizeY() const
+inline int GaborFilter<_Tp>::getFilterSizeY() const
 {
     return mFilterSizeY;
 }
 
 template<typename _Tp>
-inline _Tp GaborFilter_<_Tp>::getKMax() const
+inline _Tp GaborFilter<_Tp>::getKMax() const
 {
     return mKMax;
 }
 
 template<typename _Tp>
-inline _Tp GaborFilter_<_Tp>::getSigma() const
+inline _Tp GaborFilter<_Tp>::getSigma() const
 {
     return mSigma;
 }
 
 template<typename _Tp> inline Mat_<complex<_Tp> >
-GaborFilter_<_Tp>::getFilter() const
+GaborFilter<_Tp>::getFilter() const
 {
     return mFilter;
 }
 
 template<typename _Tp> inline Mat_<Vec<_Tp, 2> >
-GaborFilter_<_Tp>::getFilterFFT() const
+GaborFilter<_Tp>::getFilterFFT() const
 {
     return mFilterFFT;
 }
@@ -206,11 +206,11 @@ GaborFilter_<_Tp>::getFilterFFT() const
  * Private functions
  *******************/
 template<typename _Tp>
-void GaborFilter_<_Tp>::init(Mat_<complex<_Tp> > & filter,
+void GaborFilter<_Tp>::init(Mat_<complex<_Tp> > & filter,
         Mat_<Vec<_Tp, 2> >& filterFFT, int scale, int orientation,
         int filterSizeX, int filterSizeY, _Tp kMax, _Tp sigma)
 {
-    GaborFilter_<_Tp>::checkForFloatingPoint();
+    GaborFilter<_Tp>::checkForFloatingPoint();
 
     mScale = scale;
     mOrientation = orientation;
@@ -226,7 +226,7 @@ void GaborFilter_<_Tp>::init(Mat_<complex<_Tp> > & filter,
 }
 
 template<typename _Tp>
-void GaborFilter_<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
+void GaborFilter<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
         int scale, int orientation, int filterSizeX, int filterSizeY,
         _Tp kMax, _Tp sigma)
 {
@@ -251,6 +251,7 @@ void GaborFilter_<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
     _Tp imagPart;
     _Tp offsetXVal;
     _Tp offsetYVal;
+    complex<_Tp> complexTempResult;
     complex<_Tp> complexResult;
 
     Mat_<_Tp> realWavelet(filterSizeX, filterSizeY);
@@ -269,11 +270,14 @@ void GaborFilter_<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
         offsetYVal = (index%filterSizeY) - offsetY;
 
         magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
+
         commonPart = kS * exp(kSHalf * (magnitude));
 
-        complexResult = commonPart *
-                (exp(1.0*i * (kReal * offsetYVal) + (kImag * offsetXVal))
+        complexTempResult =
+                (exp(1.0*i * ((kReal * offsetYVal) + (kImag * offsetXVal)))
                 - exp(-0.5 * sSquare));
+
+        complexResult = commonPart * complexTempResult;
 
         *data++ = complexResult;
     }

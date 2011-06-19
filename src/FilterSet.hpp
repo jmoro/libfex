@@ -67,7 +67,7 @@ public:
 	_Tp getKMax() const;
 	_Tp getSigma() const;
 	bool isStartAtScaleZero() const;
-	map <pair<int, int>, GaborFilter_<_Tp> > getFilterSet() const;
+	map <pair<int, int>, GaborFilter<_Tp> > getFilterSet() const;
 
 private:
 	/*
@@ -80,16 +80,16 @@ private:
 	_Tp mKMax;
 	_Tp mSigma;
 	bool startAtScaleZero;
-	map <pair<int, int>, GaborFilter_<_Tp> > mFilterSet;
+	map <pair<int, int>, GaborFilter<_Tp> > mFilterSet;
 
 	/*
 	 * Private functions
 	 */
-	void init(map <pair<int, int>, GaborFilter_<_Tp> >& result,
+	void init(map <pair<int, int>, GaborFilter<_Tp> >& result,
 			int scales, int orientations, int filterSizeX, int filterSizeY,
 			_Tp kMax, _Tp sigma, bool startAtScaleZero);
 
-	void generateFilterSet(map <pair<int, int>, GaborFilter_<_Tp> >& result,
+	void generateFilterSet(map <pair<int, int>, GaborFilter<_Tp> >& result,
 			int scales, int orientations, int filterSizeX, int filterSizeY,
 			_Tp kMax, _Tp sigma, bool startAtScaleZero);
 
@@ -175,7 +175,7 @@ inline bool FilterSet<_Tp>::isStartAtScaleZero() const
 }
 
 template<typename _Tp>
-inline map <pair<int, int>, GaborFilter_<_Tp> >
+inline map <pair<int, int>, GaborFilter<_Tp> >
 FilterSet<_Tp>::getFilterSet() const
 {
 	return mFilterSet;
@@ -185,7 +185,7 @@ FilterSet<_Tp>::getFilterSet() const
  * Private functions
  *******************/
 template<typename _Tp>
-void FilterSet<_Tp>::init(map <pair<int, int>, GaborFilter_<_Tp> >& result,
+void FilterSet<_Tp>::init(map <pair<int, int>, GaborFilter<_Tp> >& result,
 		int scales, int orientations, int filterSizeX, int filterSizeY,
 		_Tp kMax, _Tp sigma, bool startAtScaleZero)
 {
@@ -203,7 +203,7 @@ void FilterSet<_Tp>::init(map <pair<int, int>, GaborFilter_<_Tp> >& result,
 
 template<typename _Tp>
 void FilterSet<_Tp>::generateFilterSet(
-		map <pair<int, int>, GaborFilter_<_Tp> >& result,
+		map <pair<int, int>, GaborFilter<_Tp> >& result,
 		int scales, int orientations, int filterSizeX, int filterSizeY,
 		_Tp kMax, _Tp sigma, bool startAtScaleZero)
 {
@@ -222,7 +222,7 @@ void FilterSet<_Tp>::generateFilterSet(
 	{
 		for(int j=startOrientation; j<=stopOrientation; j++)
 		{
-			result[pair<int, int>(i,j)] = GaborFilter_<_Tp>(i, j, filterSizeX,
+			result[pair<int, int>(i,j)] = GaborFilter<_Tp>(i, j, filterSizeX,
 					filterSizeY, kMax, sigma);
 		}
 	}

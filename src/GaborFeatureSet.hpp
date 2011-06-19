@@ -51,19 +51,21 @@ public:
 	GaborFeatureSet();
 	GaborFeatureSet(FilterSet<_Tp> _filterSet, _Tp _variabilityRate,
 	        bool _needZMUNormalization,	bool _needDownSampling,
-	        _Tp _downsamplingRatio=1.0f);
+	        bool _storeRawFeatures=false, _Tp _downsamplingRatio=1.0f);
 	virtual ~GaborFeatureSet();
 
 	/*
 	 * Methods
 	 */
 	void generateFeatureSet(vector<Mat_<_Tp> >& mat);
+	void reduceRawFeatureSet(double variabilityRate);
 
 	/*
 	 * Attribute getters
 	 */
 	Mat_<_Tp> getCoefficients() const;
 	Mat_<_Tp> getTrainingData() const;
+	Mat_<_Tp> getFeatures() const;
 
 private:
     /*
@@ -73,7 +75,9 @@ private:
 	_Tp mVariabilityRate;
 	bool mNeedZMUNormalization;
 	bool mNeedDownSampling;
+	bool mStoreRawFeatures;
 	_Tp mDownSamplingRatio;
+	Mat_<_Tp> mFeatures;
 	Mat_<_Tp> mCoefficients;
 	Mat_<_Tp> mTrainingData;
 
@@ -82,7 +86,7 @@ private:
 	 */
 	void init(FilterSet<_Tp> filterSet, _Tp variabilityRate,
 			bool needZMUNormalization, bool needDownSampling,
-			_Tp downsamplingRatio);
+			bool storeRawFeatures, _Tp downsamplingRatio);
 
 };
 
@@ -94,10 +98,11 @@ GaborFeatureSet<_Tp>::GaborFeatureSet()
 template <typename _Tp>
 GaborFeatureSet<_Tp>::GaborFeatureSet(FilterSet<_Tp> _filterSet,
         _Tp _variabilityRate, bool _needZMUNormalization,
-        bool _needDownSampling, _Tp _downsamplingRatio)
+        bool _needDownSampling, bool _storeRawFeatures,
+        _Tp _downsamplingRatio)
 {
-	init(_filterSet, _needZMUNormalization, _variabilityRate, _needDownSampling,
-			_downsamplingRatio);
+	init(_filterSet, _variabilityRate, _needZMUNormalization, _needDownSampling,
+			_storeRawFeatures, _downsamplingRatio);
 }
 
 
@@ -118,6 +123,16 @@ inline Mat_<_Tp> GaborFeatureSet<_Tp>::getTrainingData() const
     return mTrainingData;
 }
 
+template<typename _Tp>
+inline Mat_<_Tp> GaborFeatureSet<_Tp>::getFeatures() const
+{
+    if(this->mStoreRawFeatures)
+    {
+        return mFeatures;
+    }
+    return Mat_<_Tp>();
+}
+
 template <typename _Tp>
 void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 {
@@ -126,6 +141,7 @@ void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 	int numFilters = this->mFilterSet.getFilterSet().size();
 
 	int numImages = mat.size();
+
 	int rowFilteredImageSize = ((Mat)mat.front()).cols *
 			((Mat)mat.front()).rows * numFilters *
 			pow(this->mDownSamplingRatio,2);
@@ -136,10 +152,12 @@ void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 			mat.begin(), itVec_end = mat.end();
 
 	Mat_<double> tmpResult;
+
 	int i=0;
 	// Iteration over the images to generate the features representing the image
 	for(; itVec != itVec_end; ++itVec)
 	{
+
 		FilteringHelpers::imageApplyFilterSet((*itVec) , this->mFilterSet,
 		        tmpResult, this->mNeedZMUNormalization,
 		        this->mNeedDownSampling, this->mDownSamplingRatio);
@@ -151,20 +169,44 @@ void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 		i++;
 	}
 
-	MathHelpers::pcaReduceData(tmpResult, this->mVariabilityRate,
+	if(mStoreRawFeatures)
+	{
+	    ((Mat)features).copyTo(this->mFeatures);
+	}
+
+	MathHelpers::pcaReduceData(features, this->mVariabilityRate,
 	        this->mTrainingData, this->mCoefficients);
+}
+
+template <typename _Tp>
+void GaborFeatureSet<_Tp>::reduceRawFeatureSet(double variabilityRate)
+{
+    CV_Assert(this->mStoreRawFeatures);
+
+    this->mVariabilityRate = variabilityRate;
+
+    MathHelpers::pcaReduceData(this->mFeatures, this->mVariabilityRate,
+            this->mTrainingData, this->mCoefficients);
 }
 
 template <typename _Tp>
 void GaborFeatureSet<_Tp>::init(FilterSet<_Tp> filterSet,
         _Tp variabilityRate, bool needZMUNormalization,
-        bool needDownSampling, _Tp downsamplingRatio)
+        bool needDownSampling, bool storeRawFeatures,
+        _Tp downsamplingRatio)
 {
 	mFilterSet = filterSet;
 	mVariabilityRate = variabilityRate;
 	mNeedZMUNormalization = needZMUNormalization;
 	mNeedDownSampling = needDownSampling;
-	mDownSamplingRatio = downsamplingRatio;
+	mStoreRawFeatures = storeRawFeatures;
+	if(!mNeedDownSampling)
+	{
+	    mDownSamplingRatio = 1;
+	}
+	else {
+	    mDownSamplingRatio = downsamplingRatio;
+	}
 }
 
 }
