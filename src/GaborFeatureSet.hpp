@@ -28,6 +28,7 @@
 #include "opencv2/opencv.hpp"
 #include "FeatureSet.hpp"
 #include "FilteringHelpers.hpp"
+#include <armadillo>
 
 namespace fex {
 
@@ -58,6 +59,7 @@ public:
 	 * Methods
 	 */
 	void generateFeatureSet(vector<Mat_<_Tp> >& mat);
+	void projectData(vector<Mat_<_Tp> >& mat, Mat_<_Tp>& dst);
 	void reduceRawFeatureSet(double variabilityRate);
 
 	/*
@@ -134,48 +136,35 @@ inline Mat_<_Tp> GaborFeatureSet<_Tp>::getFeatures() const
 }
 
 template <typename _Tp>
-void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
+void GaborFeatureSet<_Tp>::generateFeatureSet(
+         vector<Mat_<_Tp> >& mat)
 {
-    typedef typename vector<Mat_<_Tp> >::iterator vectorMatrix;
+    Mat_<_Tp> features;
 
-	int numFilters = this->mGaborSet.getGaborSet().size();
-
-	int numImages = mat.size();
-
-	int rowFilteredImageSize = ((Mat)mat.front()).cols *
-			((Mat)mat.front()).rows * numFilters *
-			pow(this->mDownSamplingRatio,2);
-
-	Mat_<_Tp> features(numImages, rowFilteredImageSize);
-
-	vectorMatrix itVec =
-			mat.begin(), itVec_end = mat.end();
-
-	Mat_<double> tmpResult;
-
-	int i=0;
-	// Iteration over the images to generate the features representing the image
-	for(; itVec != itVec_end; ++itVec)
-	{
-
-		FilteringHelpers::imageApplyGaborSet((*itVec) , this->mGaborSet,
-		        tmpResult, this->mNeedZMUNormalization,
-		        this->mNeedDownSampling, this->mDownSamplingRatio);
-
-		Mat_<_Tp> tmp = features.row(i);
-
-		((Mat)tmpResult.reshape(1)).copyTo(tmp);
-
-		i++;
-	}
+    FilteringHelpers::imageApplyGaborSetToMatVector(mat, this->mGaborSet,
+            features, this->mNeedZMUNormalization, this->mNeedDownSampling,
+            this->mDownSamplingRatio);
 
 	if(mStoreRawFeatures)
 	{
 	    ((Mat)features).copyTo(this->mFeatures);
 	}
 
-	MathHelpers::pcaReduceData(features, this->mVariabilityRate,
+    MathHelpers::pcaReduceData(features, this->mVariabilityRate,
 	        this->mTrainingData, this->mCoefficients);
+}
+
+template <typename _Tp>
+void GaborFeatureSet<_Tp>::projectData(vector<Mat_<_Tp> >& mat,
+        Mat_<_Tp>& dst)
+{
+    Mat_<_Tp> features;
+
+    FilteringHelpers::imageApplyGaborSetToMatVector(mat, this->mGaborSet,
+            features, this->mNeedZMUNormalization, this->mNeedDownSampling,
+            this->mDownSamplingRatio);
+
+    dst = features * mCoefficients;
 }
 
 template <typename _Tp>

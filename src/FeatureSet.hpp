@@ -38,6 +38,8 @@ template<typename _Tp> class FeatureSet
 public:
 
     virtual void generateFeatureSet(vector<Mat_<_Tp> >& mat) = 0;
+    virtual void projectData(vector<Mat_<_Tp> >& mat,
+            Mat_<_Tp>& dst) = 0;
 };
 
 }

@@ -29,6 +29,7 @@
 #include "ImageHelpers.hpp"
 #include "GaborSet.hpp"
 #include "GaborFilter.hpp"
+#include <vector>
 #include <map>
 
 namespace fex
@@ -38,6 +39,11 @@ class FilteringHelpers
 {
 public:
 
+    template<typename _Tp>
+    static void imageApplyGaborSetToMatVector(
+            vector<Mat_<_Tp> >& mat, const GaborSet<_Tp> filterSet,
+            Mat_<_Tp>& features, bool needZMUNormalization,
+            bool needDownSampling, _Tp downSamplingRatio = 1.0f);
 
     template<typename _Tp>
     static void imageApplyGaborSet(Mat_<_Tp> image,
@@ -46,6 +52,45 @@ public:
 
 };
 
+template<typename _Tp>
+void FilteringHelpers::imageApplyGaborSetToMatVector(
+        vector<Mat_<_Tp> >& mat, const GaborSet<_Tp> filterSet,
+        Mat_<_Tp>& features, bool needZMUNormalization,
+        bool needDownSampling, _Tp downSamplingRatio)
+{
+    typedef typename vector<Mat_<_Tp> >::iterator vectorMatrix;
+
+    int numFilters = filterSet.getGaborSet().size();
+
+    int numImages = mat.size();
+
+    int rowFilteredImageSize = ((Mat)mat.front()).cols *
+           ((Mat)mat.front()).rows * numFilters *
+           pow(downSamplingRatio,2);
+
+    features.create(numImages, rowFilteredImageSize);
+
+    vectorMatrix itVec =
+           mat.begin(), itVec_end = mat.end();
+
+    Mat_<double> tmpResult;
+
+    int i=0;
+    // Iteration over the images to generate the features representing the image
+    for(; itVec != itVec_end; ++itVec)
+    {
+
+       FilteringHelpers::imageApplyGaborSet((*itVec) , filterSet,
+               tmpResult, needZMUNormalization,
+               needDownSampling, downSamplingRatio);
+
+       Mat_<_Tp> tmp = features.row(i);
+
+       ((Mat)tmpResult.reshape(1)).copyTo(tmp);
+
+       i++;
+    }
+}
 
 template<typename _Tp>
 void FilteringHelpers::imageApplyGaborSet(Mat_<_Tp> image,
