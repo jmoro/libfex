@@ -20,8 +20,8 @@
  *      Javier Moro Sotelo - initial API and implementation
  ***************************************************************************/
 
-#ifndef FILTERSET_HPP_
-#define FILTERSET_HPP_
+#ifndef GABORSET_HPP_
+#define GABORSET_HPP_
 
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
@@ -38,7 +38,7 @@ namespace fex {
  *
  * Using int type is not allowed, and will cause a runtime error.
  */
-template<typename _Tp> class FilterSet
+template<typename _Tp> class GaborSet
 {
 public:
 	/*
@@ -49,13 +49,13 @@ public:
 	/*
 	 * Constructors
 	 */
-	FilterSet();
-	FilterSet(int _scales, int _orientations, int _filterSize,
+	GaborSet();
+	GaborSet(int _scales, int _orientations, int _filterSize,
             _Tp _kMax, _Tp _sigma, bool startAtScaleZero = true);
-	FilterSet(int _scales, int _orientations, int _filterSizeX,
+	GaborSet(int _scales, int _orientations, int _filterSizeX,
 			int _filterSizeY, _Tp _kMax, _Tp _sigma,
 			bool startAtScaleZero = true);
-	virtual ~FilterSet();
+	virtual ~GaborSet();
 
 	/*
 	 * Attribute getters
@@ -67,7 +67,7 @@ public:
 	_Tp getKMax() const;
 	_Tp getSigma() const;
 	bool isStartAtScaleZero() const;
-	map <pair<int, int>, GaborFilter<_Tp> > getFilterSet() const;
+	map <pair<int, int>, GaborFilter<_Tp> > getGaborSet() const;
 
 private:
 	/*
@@ -80,7 +80,7 @@ private:
 	_Tp mKMax;
 	_Tp mSigma;
 	bool startAtScaleZero;
-	map <pair<int, int>, GaborFilter<_Tp> > mFilterSet;
+	map <pair<int, int>, GaborFilter<_Tp> > mGaborSet;
 
 	/*
 	 * Private functions
@@ -89,7 +89,7 @@ private:
 			int scales, int orientations, int filterSizeX, int filterSizeY,
 			_Tp kMax, _Tp sigma, bool startAtScaleZero);
 
-	void generateFilterSet(map <pair<int, int>, GaborFilter<_Tp> >& result,
+	void generateGaborSet(map <pair<int, int>, GaborFilter<_Tp> >& result,
 			int scales, int orientations, int filterSizeX, int filterSizeY,
 			_Tp kMax, _Tp sigma, bool startAtScaleZero);
 
@@ -104,27 +104,27 @@ private:
 /**************
  * Constructors
  **************/
-template<typename _Tp> FilterSet<_Tp>::FilterSet()
+template<typename _Tp> GaborSet<_Tp>::GaborSet()
 {
 }
 
-template<typename _Tp> FilterSet<_Tp>::FilterSet(int _scales,
+template<typename _Tp> GaborSet<_Tp>::GaborSet(int _scales,
 		int _orientations, int _filterSize, _Tp _kMax, _Tp _sigma,
 		bool startAtScaleZero)
 {
-	init(mFilterSet, _scales, _orientations, _filterSize, _filterSize,
+	init(mGaborSet, _scales, _orientations, _filterSize, _filterSize,
 			_kMax, _sigma, startAtScaleZero);
 }
 
-template<typename _Tp> FilterSet<_Tp>::FilterSet(int _scales,
+template<typename _Tp> GaborSet<_Tp>::GaborSet(int _scales,
 		int _orientations, int _filterSizeX, int _filterSizeY, _Tp _kMax,
 		_Tp _sigma, bool startAtScaleZero)
 {
-	init(mFilterSet, _scales, _orientations, _filterSizeX, _filterSizeY,
+	init(mGaborSet, _scales, _orientations, _filterSizeX, _filterSizeY,
 			_kMax, _sigma, startAtScaleZero);
 }
 
-template<typename _Tp> FilterSet<_Tp>::~FilterSet()
+template<typename _Tp> GaborSet<_Tp>::~GaborSet()
 {
     // Nothing to see here... keep walking!!!
 }
@@ -133,59 +133,59 @@ template<typename _Tp> FilterSet<_Tp>::~FilterSet()
  * Attribute getters
  *******************/
 template<typename _Tp>
-inline int FilterSet<_Tp>::getScales() const
+inline int GaborSet<_Tp>::getScales() const
 {
 	return mScales;
 }
 
 template<typename _Tp>
-inline int FilterSet<_Tp>::getOrientations() const
+inline int GaborSet<_Tp>::getOrientations() const
 {
 	return mOrientations;
 }
 
 template<typename _Tp>
-inline int FilterSet<_Tp>::getFilterSizeX() const
+inline int GaborSet<_Tp>::getFilterSizeX() const
 {
 	return mFilterSizeX;
 }
 
 template<typename _Tp>
-inline int FilterSet<_Tp>::getFilterSizeY() const
+inline int GaborSet<_Tp>::getFilterSizeY() const
 {
 	return mFilterSizeY;
 }
 
 template<typename _Tp>
-inline _Tp FilterSet<_Tp>::getKMax() const
+inline _Tp GaborSet<_Tp>::getKMax() const
 {
     return mKMax;
 }
 
 template<typename _Tp>
-inline _Tp FilterSet<_Tp>::getSigma() const
+inline _Tp GaborSet<_Tp>::getSigma() const
 {
     return mSigma;
 }
 
 template<typename _Tp>
-inline bool FilterSet<_Tp>::isStartAtScaleZero() const
+inline bool GaborSet<_Tp>::isStartAtScaleZero() const
 {
 	return isStartAtScaleZero();
 }
 
 template<typename _Tp>
 inline map <pair<int, int>, GaborFilter<_Tp> >
-FilterSet<_Tp>::getFilterSet() const
+GaborSet<_Tp>::getGaborSet() const
 {
-	return mFilterSet;
+	return mGaborSet;
 }
 
 /*******************
  * Private functions
  *******************/
 template<typename _Tp>
-void FilterSet<_Tp>::init(map <pair<int, int>, GaborFilter<_Tp> >& result,
+void GaborSet<_Tp>::init(map <pair<int, int>, GaborFilter<_Tp> >& result,
 		int scales, int orientations, int filterSizeX, int filterSizeY,
 		_Tp kMax, _Tp sigma, bool startAtScaleZero)
 {
@@ -196,13 +196,13 @@ void FilterSet<_Tp>::init(map <pair<int, int>, GaborFilter<_Tp> >& result,
 	mFilterSizeY = filterSizeY;
 	mKMax = kMax;
 	mSigma = sigma;
-	generateFilterSet(mFilterSet, scales, orientations, filterSizeX,
+	generateGaborSet(mGaborSet, scales, orientations, filterSizeX,
 			filterSizeY, kMax, sigma, startAtScaleZero);
 
 }
 
 template<typename _Tp>
-void FilterSet<_Tp>::generateFilterSet(
+void GaborSet<_Tp>::generateGaborSet(
 		map <pair<int, int>, GaborFilter<_Tp> >& result,
 		int scales, int orientations, int filterSizeX, int filterSizeY,
 		_Tp kMax, _Tp sigma, bool startAtScaleZero)
@@ -231,4 +231,4 @@ void FilterSet<_Tp>::generateFilterSet(
 
 }
 
-#endif /* FILTERSET_HPP_ */
+#endif /* GABORSET_HPP_ */

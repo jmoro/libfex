@@ -49,7 +49,7 @@ public:
 	 * Constructors
 	 */
 	GaborFeatureSet();
-	GaborFeatureSet(FilterSet<_Tp> _filterSet, _Tp _variabilityRate,
+	GaborFeatureSet(GaborSet<_Tp> _filterSet, _Tp _variabilityRate,
 	        bool _needZMUNormalization,	bool _needDownSampling,
 	        bool _storeRawFeatures=false, _Tp _downsamplingRatio=1.0f);
 	virtual ~GaborFeatureSet();
@@ -71,7 +71,7 @@ private:
     /*
      * Attributes
      */
-	FilterSet<_Tp> mFilterSet;
+	GaborSet<_Tp> mGaborSet;
 	_Tp mVariabilityRate;
 	bool mNeedZMUNormalization;
 	bool mNeedDownSampling;
@@ -84,7 +84,7 @@ private:
 	/*
 	 * Methods
 	 */
-	void init(FilterSet<_Tp> filterSet, _Tp variabilityRate,
+	void init(GaborSet<_Tp> filterSet, _Tp variabilityRate,
 			bool needZMUNormalization, bool needDownSampling,
 			bool storeRawFeatures, _Tp downsamplingRatio);
 
@@ -96,7 +96,7 @@ GaborFeatureSet<_Tp>::GaborFeatureSet()
 }
 
 template <typename _Tp>
-GaborFeatureSet<_Tp>::GaborFeatureSet(FilterSet<_Tp> _filterSet,
+GaborFeatureSet<_Tp>::GaborFeatureSet(GaborSet<_Tp> _filterSet,
         _Tp _variabilityRate, bool _needZMUNormalization,
         bool _needDownSampling, bool _storeRawFeatures,
         _Tp _downsamplingRatio)
@@ -138,7 +138,7 @@ void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 {
     typedef typename vector<Mat_<_Tp> >::iterator vectorMatrix;
 
-	int numFilters = this->mFilterSet.getFilterSet().size();
+	int numFilters = this->mGaborSet.getGaborSet().size();
 
 	int numImages = mat.size();
 
@@ -158,7 +158,7 @@ void GaborFeatureSet<_Tp>::generateFeatureSet(vector<Mat_<_Tp> >& mat)
 	for(; itVec != itVec_end; ++itVec)
 	{
 
-		FilteringHelpers::imageApplyFilterSet((*itVec) , this->mFilterSet,
+		FilteringHelpers::imageApplyGaborSet((*itVec) , this->mGaborSet,
 		        tmpResult, this->mNeedZMUNormalization,
 		        this->mNeedDownSampling, this->mDownSamplingRatio);
 
@@ -190,12 +190,12 @@ void GaborFeatureSet<_Tp>::reduceRawFeatureSet(double variabilityRate)
 }
 
 template <typename _Tp>
-void GaborFeatureSet<_Tp>::init(FilterSet<_Tp> filterSet,
+void GaborFeatureSet<_Tp>::init(GaborSet<_Tp> filterSet,
         _Tp variabilityRate, bool needZMUNormalization,
         bool needDownSampling, bool storeRawFeatures,
         _Tp downsamplingRatio)
 {
-	mFilterSet = filterSet;
+	mGaborSet = filterSet;
 	mVariabilityRate = variabilityRate;
 	mNeedZMUNormalization = needZMUNormalization;
 	mNeedDownSampling = needDownSampling;

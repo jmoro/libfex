@@ -47,7 +47,7 @@ AC_C_INLINE
 AC_CHECK_FUNCS([pow sqrt])
 
 AC_CONFIG_FILES([Makefile
-				 samples/Makefile
+                 samples/Makefile
                  src/Makefile
                  src/libfex.pc])
 AC_OUTPUT

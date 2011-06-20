@@ -26,7 +26,7 @@
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
 #include "opencv2/opencv.hpp"
-#include "FilterSet.hpp"
+#include "GaborSet.hpp"
 
 namespace fex
 {

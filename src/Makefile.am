@@ -10,7 +10,7 @@ include_HEADERS = GaborFilter.hpp \
                   MathHelpers.hpp \
                   DebugHelpers.hpp \
                   FilteringHelpers.hpp \
-                  FilterSet.hpp
+                  GaborSet.hpp
 
 libfex_la_SOURCES = DebugHelpers.cpp
 libfex_la_CPPFLAGS = $(OPENCV_CFLAGS)

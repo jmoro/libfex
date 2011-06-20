@@ -27,7 +27,7 @@
 // is way too much
 #include "opencv2/opencv.hpp"
 #include "ImageHelpers.hpp"
-#include "FilterSet.hpp"
+#include "GaborSet.hpp"
 #include "GaborFilter.hpp"
 #include <map>
 
@@ -40,16 +40,16 @@ public:
 
 
     template<typename _Tp>
-    static void imageApplyFilterSet(Mat_<_Tp> image,
-            FilterSet<_Tp> filterSet, Mat_<_Tp>& dst,
+    static void imageApplyGaborSet(Mat_<_Tp> image,
+            GaborSet<_Tp> filterSet, Mat_<_Tp>& dst,
             bool needZMUNorm, bool needDownSampl, _Tp ratio=1.0f);
 
 };
 
 
 template<typename _Tp>
-void FilteringHelpers::imageApplyFilterSet(Mat_<_Tp> image,
-        FilterSet<_Tp> filterSet, Mat_<_Tp>& dst,
+void FilteringHelpers::imageApplyGaborSet(Mat_<_Tp> image,
+        GaborSet<_Tp> filterSet, Mat_<_Tp>& dst,
         bool needZMUNorm, bool needDownSampl, _Tp ratio)
 {
 
@@ -58,7 +58,7 @@ void FilteringHelpers::imageApplyFilterSet(Mat_<_Tp> image,
             mapPairGaborIter;
 
     map<pair<int, int>, GaborFilter<_Tp> > filters =
-            filterSet.getFilterSet();
+            filterSet.getGaborSet();
 
     int numFilters = filters.size();
     int rowFilteredImageSize = (((Mat)image).rows)*
