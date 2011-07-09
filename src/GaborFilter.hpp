@@ -25,8 +25,9 @@
 
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
-#include "ImageHelpers.hpp"
 #include "opencv2/opencv.hpp"
+#include "opencv2/core/internal.hpp"
+#include "ImageHelpers.hpp"
 // TODO: Remove this dependence with typeinfo here, create an utility function.
 #include <typeinfo>
 
@@ -34,6 +35,114 @@ namespace fex
 {
 
 using namespace cv;
+
+/*
+ ==============================================================================
+ ==============================================================================
+ ==                            GaborFilterBody                               ==
+ ==============================================================================
+ ==============================================================================
+ */
+
+/*
+ * Template class for parallel Gabor filter initialization
+ */
+template<typename _Tp> class GaborFilterBody
+{
+public:
+
+	/*
+	 * Constructor
+	 */
+	GaborFilterBody(int _filterSizeX, int _filterSizeY, int _offsetX,
+			int _offsetY, _Tp _kS, _Tp _kSHalf, _Tp _kReal,
+			_Tp _kImag, _Tp _sSquare, complex<_Tp>* _data);
+
+	/*
+	 * TBB operator
+	 */
+	void operator() (const BlockedRange& range ) const;
+
+private:
+
+	/*
+	 * Input and output arguments
+	 */
+	complex<_Tp>* data;
+
+	/*
+	 * Arguments needed for computation
+	 */
+	int mFilterSizeX;
+	int mFilterSizeY;
+	int mOffsetX;
+	int mOffsetY;
+	_Tp mKS;
+	_Tp mKSHalf;
+	_Tp mKReal;
+	_Tp mKImag;
+	_Tp mSSquare;
+
+};
+
+/******************************************************************************
+ ******************************************************************************
+ **                          CLASS IMPLEMENTATION                            **
+ ******************************************************************************
+ ******************************************************************************/
+
+/*************
+ * Constructor
+ *************/
+template<typename _Tp>
+GaborFilterBody<_Tp>::GaborFilterBody(int _filterSizeX, int _filterSizeY,
+		int _offsetX, int _offsetY, _Tp _kS, _Tp _kSHalf, _Tp _kReal,
+		_Tp _kImag, _Tp _sSquare, complex<_Tp>* _data) :
+		mFilterSizeX(_filterSizeX), mFilterSizeY(_filterSizeY),
+		mOffsetX(_offsetX), mOffsetY(_offsetY), mKS(_kS), mKSHalf(_kSHalf),
+		mKReal(_kReal), mKImag(_kImag), mSSquare(_sSquare), data(_data) {}
+
+/**************
+ * TBB Operator
+ **************/
+template<typename _Tp>
+void GaborFilterBody<_Tp>::operator() (const BlockedRange& range ) const
+{
+	const complex<_Tp> i = sqrt (complex<_Tp>(-1));
+
+	_Tp magnitude;
+	_Tp commonPart;
+	_Tp offsetXVal;
+	_Tp offsetYVal;
+	complex<_Tp> complexTempResult;
+	complex<_Tp> complexResult;
+
+	for( int index=range.begin(); index!=range.end( ); ++index )
+	{
+		offsetXVal = (index/mFilterSizeY) - mOffsetX;
+		offsetYVal = (index%mFilterSizeY) - mOffsetY;
+
+		magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
+
+		commonPart = mKS * exp(mKSHalf * (magnitude));
+
+		complexTempResult =
+				(exp(1.0*i * ((mKReal * offsetYVal) + (mKImag * offsetXVal)))
+				- exp(-0.5 * mSSquare));
+
+		complexResult = commonPart * complexTempResult;
+
+		data[index] = complexResult;
+	}
+}
+
+/*
+ ==============================================================================
+ ==============================================================================
+ ==                              GaborFilter                                 ==
+ ==============================================================================
+ ==============================================================================
+ */
 
 /*
  * Template class for Gabor Filter.
@@ -230,57 +339,59 @@ void GaborFilter<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
         int scale, int orientation, int filterSizeX, int filterSizeY,
         _Tp kMax, _Tp sigma)
 {
-    const complex<_Tp> i = sqrt (complex<_Tp>(-1));
+	_Tp offsetX = filterSizeX/2.0;
+	_Tp offsetY = filterSizeY/2.0;
+	_Tp psi = ((orientation*M_PI)/8);
+	_Tp f = sqrt(2);
+	_Tp fV = pow(f, scale);
+	_Tp kReal = (kMax/fV)*cos(psi);
+	_Tp kImag = (kMax/fV)*sin(psi);
+	_Tp kSquare = pow(sqrt(pow(kReal, 2) + pow(kImag, 2)), 2);
+	_Tp sSquare = pow(sigma,2);
+	_Tp sSquareHalf = -0.5 * sSquare;
+	_Tp kS = kSquare/sSquare;
+	_Tp kSHalf = -0.5f * kSquare / sSquare;
 
-    _Tp offsetX = filterSizeX/2.0;
-    _Tp offsetY = filterSizeY/2.0;
-    _Tp psi = ((orientation*M_PI)/8);
-    _Tp f = sqrt(2);
-    _Tp fV = pow(f, scale);
-    _Tp kReal = (kMax/fV)*cos(psi);
-    _Tp kImag = (kMax/fV)*sin(psi);
-    _Tp kSquare = pow(sqrt(pow(kReal, 2) + pow(kImag, 2)), 2);
-    _Tp sSquare = pow(sigma,2);
-    _Tp sSquareHalf = -0.5 * sSquare;
-    _Tp kS = kSquare/sSquare;
-    _Tp kSHalf = -0.5f * kSquare / sSquare;
+	result.create(filterSizeX, filterSizeY);
 
-    _Tp magnitude;
-    _Tp commonPart;
-    _Tp realPart;
-    _Tp imagPart;
-    _Tp offsetXVal;
-    _Tp offsetYVal;
-    complex<_Tp> complexTempResult;
-    complex<_Tp> complexResult;
+	int numberColumns = filterSizeY*filterSizeX;
 
-    Mat_<_Tp> realWavelet(filterSizeX, filterSizeY);
-    Mat_<_Tp> imagWavelet(filterSizeX, filterSizeY);
+	complex<_Tp>* data = ((Mat)result).ptr<complex<_Tp> >(0);
 
-    result.create(filterSizeX, filterSizeY);
 
-    int numberColumns = filterSizeY*filterSizeX;
-    int numberLines = 1;
+	GaborFilterBody<_Tp> gaborFilterBody(mFilterSizeX, mFilterSizeY,
+			offsetX, offsetY, kS, kSHalf, kReal, kImag, sSquare, data);
 
-    complex<_Tp>* data = ((Mat)result).ptr<complex<_Tp> >(0);
+	parallel_for(BlockedRange(0, numberColumns), gaborFilterBody);
 
-    for (int index=0; index<numberColumns; index++)
-    {
-        offsetXVal = (index/filterSizeY) - offsetX;
-        offsetYVal = (index%filterSizeY) - offsetY;
+	/*
+	const complex<_Tp> i = sqrt (complex<_Tp>(-1));
 
-        magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
+	_Tp magnitude;
+	_Tp commonPart;
+	_Tp offsetXVal;
+	_Tp offsetYVal;
+	complex<_Tp> complexTempResult;
+	complex<_Tp> complexResult;
 
-        commonPart = kS * exp(kSHalf * (magnitude));
+	for (int index=0; index<numberColumns; index++)
+	{
+		offsetXVal = (index/filterSizeY) - offsetX;
+		offsetYVal = (index%filterSizeY) - offsetY;
 
-        complexTempResult =
-                (exp(1.0*i * ((kReal * offsetYVal) + (kImag * offsetXVal)))
-                - exp(-0.5 * sSquare));
+		magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
 
-        complexResult = commonPart * complexTempResult;
+		commonPart = kS * exp(kSHalf * (magnitude));
 
-        *data++ = complexResult;
-    }
+		complexTempResult =
+				(exp(1.0*i * ((kReal * offsetYVal) + (kImag * offsetXVal)))
+				- exp(-0.5 * sSquare));
+
+		complexResult = commonPart * complexTempResult;
+
+		*data++ = complexResult;
+	}
+	*/
 }
 
 }

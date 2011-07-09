@@ -33,9 +33,14 @@ ARMADILLO_LIBS="$arma_savedlibs"
 AC_SUBST([ARMADILLO_LIBS],["${ARMADILLO_LIBS} -larmadillo"])
 
 # OpenCV
-PKG_CHECK_MODULES(OPENCV, opencv)
+PKG_CHECK_MODULES(OPENCV, opencv >= 2.2)
 AC_SUBST(OPENCV_CFLAGS)
 AC_SUBST(OPENCV_LIBS)
+
+# TBB
+PKG_CHECK_MODULES([TBB], [tbb >= 3.0], [AC_DEFINE([HAVE_TBB], [1], [Define to use Intel TBB Library])], [AC_MSG_RESULT([Intel TBB not found.])])
+AC_SUBST(TBB_CFLAGS)
+AC_SUBST(TBB_LIBS)
 
 # Checks for header files.
 

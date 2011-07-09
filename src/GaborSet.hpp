@@ -26,10 +26,101 @@
 // TODO: Check really needed header files, including all OpenCV headers
 // is way too much
 #include "opencv2/opencv.hpp"
+#include "opencv2/core/internal.hpp"
 #include "GaborFilter.hpp"
 #include <vector>
 
 namespace fex {
+
+/*
+ ==============================================================================
+ ==============================================================================
+ ==                              GaborSetBody                                ==
+ ==============================================================================
+ ==============================================================================
+ */
+
+/*
+ * Template class for parallel Gabor filter set initialization
+ */
+template<typename _Tp> class GaborSetBody
+{
+public:
+
+	/*
+	 * Constructor
+	 */
+	GaborSetBody(int _scales, int _orientations, int _filterSizeX,
+			int _filterSizeY, _Tp _kMax, _Tp _sigma, GaborFilter<_Tp>* _data);
+
+	/*
+	 * TBB operator
+	 */
+	void operator() (const BlockedRange& range ) const;
+
+private:
+
+	/*
+	 * Input and output arguments
+	 */
+	GaborFilter<_Tp>* data;
+
+	/*
+	 * Arguments needed for computation
+	 */
+	int mScales;
+	int mOrientations;
+	int mFilterSizeX;
+	int mFilterSizeY;
+	_Tp mKMax;
+	_Tp mSigma;
+};
+
+/******************************************************************************
+ ******************************************************************************
+ **                          CLASS IMPLEMENTATION                            **
+ ******************************************************************************
+ ******************************************************************************/
+
+/*************
+ * Constructor
+ *************/
+template<typename _Tp>
+GaborSetBody<_Tp>::GaborSetBody(int _scales, int _orientations,
+		int _filterSizeX, int _filterSizeY, _Tp _kMax, _Tp _sigma,
+		GaborFilter<_Tp>* _data) : mScales(_scales),
+		mOrientations(_orientations), mFilterSizeX(_filterSizeX),
+		mFilterSizeY(_filterSizeY), mKMax(_kMax), mSigma(_sigma),
+		data(_data) {}
+
+/**************
+ * TBB Operator
+ **************/
+template<typename _Tp>
+void GaborSetBody<_Tp>::operator() (const BlockedRange& range ) const
+{
+	_Tp scale;
+	_Tp orientation;
+	int numFilters = mScales * mOrientations;
+
+	for( int index=range.begin(); index!=range.end( ); ++index )
+	{
+		scale = (index/mOrientations);
+		orientation = (index%mOrientations);
+
+		data[index] = GaborFilter<_Tp>(scale, orientation, mFilterSizeX,
+				mFilterSizeY, mKMax, mSigma);
+
+	}
+}
+
+/*
+ ==============================================================================
+ ==============================================================================
+ ==                                GaborSet                                  ==
+ ==============================================================================
+ ==============================================================================
+ */
 
 /*
  * Template class for Gabor Filter set.
@@ -67,7 +158,7 @@ public:
 	_Tp getKMax() const;
 	_Tp getSigma() const;
 	bool isStartAtScaleZero() const;
-	map <pair<int, int>, GaborFilter<_Tp> > getGaborSet() const;
+	GaborFilter<_Tp>* getGaborSet() const;
 
 private:
 	/*
@@ -80,18 +171,18 @@ private:
 	_Tp mKMax;
 	_Tp mSigma;
 	bool startAtScaleZero;
-	map <pair<int, int>, GaborFilter<_Tp> > mGaborSet;
+	GaborFilter<_Tp>* mGaborSet;
 
 	/*
 	 * Private functions
 	 */
-	void init(map <pair<int, int>, GaborFilter<_Tp> >& result,
-			int scales, int orientations, int filterSizeX, int filterSizeY,
-			_Tp kMax, _Tp sigma, bool startAtScaleZero);
+	void init(GaborFilter<_Tp>* result, int scales, int orientations,
+			int filterSizeX, int filterSizeY, _Tp kMax, _Tp sigma,
+			bool startAtScaleZero);
 
-	void generateGaborSet(map <pair<int, int>, GaborFilter<_Tp> >& result,
-			int scales, int orientations, int filterSizeX, int filterSizeY,
-			_Tp kMax, _Tp sigma, bool startAtScaleZero);
+	void generateGaborSet(GaborFilter<_Tp>* result, int scales,
+			int orientations, int filterSizeX, int filterSizeY, _Tp kMax,
+			_Tp sigma, bool startAtScaleZero);
 
 };
 
@@ -126,7 +217,7 @@ template<typename _Tp> GaborSet<_Tp>::GaborSet(int _scales,
 
 template<typename _Tp> GaborSet<_Tp>::~GaborSet()
 {
-    // Nothing to see here... keep walking!!!
+	//delete [] mGaborSet;
 }
 
 /*******************
@@ -175,7 +266,7 @@ inline bool GaborSet<_Tp>::isStartAtScaleZero() const
 }
 
 template<typename _Tp>
-inline map <pair<int, int>, GaborFilter<_Tp> >
+inline GaborFilter<_Tp>*
 GaborSet<_Tp>::getGaborSet() const
 {
 	return mGaborSet;
@@ -185,9 +276,9 @@ GaborSet<_Tp>::getGaborSet() const
  * Private functions
  *******************/
 template<typename _Tp>
-void GaborSet<_Tp>::init(map <pair<int, int>, GaborFilter<_Tp> >& result,
-		int scales, int orientations, int filterSizeX, int filterSizeY,
-		_Tp kMax, _Tp sigma, bool startAtScaleZero)
+void GaborSet<_Tp>::init(GaborFilter<_Tp>* result, int scales,
+		int orientations, int filterSizeX, int filterSizeY, _Tp kMax,
+		_Tp sigma, bool startAtScaleZero)
 {
 
 	mScales = scales;
@@ -202,8 +293,7 @@ void GaborSet<_Tp>::init(map <pair<int, int>, GaborFilter<_Tp> >& result,
 }
 
 template<typename _Tp>
-void GaborSet<_Tp>::generateGaborSet(
-		map <pair<int, int>, GaborFilter<_Tp> >& result,
+void GaborSet<_Tp>::generateGaborSet(GaborFilter<_Tp>* result,
 		int scales, int orientations, int filterSizeX, int filterSizeY,
 		_Tp kMax, _Tp sigma, bool startAtScaleZero)
 {
@@ -218,6 +308,16 @@ void GaborSet<_Tp>::generateGaborSet(
 		stopScale = scales;
 	}
 
+	mGaborSet = new GaborFilter<_Tp>[mScales*mOrientations];
+
+	GaborSetBody<_Tp> gaborSetBody(mScales, mOrientations, mFilterSizeX,
+			mFilterSizeY, mKMax, mSigma, mGaborSet);
+
+	parallel_for(BlockedRange(0, mScales*mOrientations), gaborSetBody);
+
+
+	/*
+
 	for(int i=startScale; i<=stopScale; i++)
 	{
 		for(int j=startOrientation; j<=stopOrientation; j++)
@@ -226,7 +326,7 @@ void GaborSet<_Tp>::generateGaborSet(
 					filterSizeY, kMax, sigma);
 		}
 	}
-
+	*/
 }
 
 }
