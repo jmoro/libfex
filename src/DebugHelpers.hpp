@@ -23,16 +23,19 @@
 #ifndef DEBUGHELPERS_HPP_
 #define DEBUGHELPERS_HPP_
 
+#include <complex>
 #include "opencv2/opencv.hpp"
 
 namespace fex
 {
 
 using namespace cv;
+using namespace std;
 
 class DebugHelpers
 {
 public:
+
     template <typename _Tp>
     static void printMatrixValues(const Mat_<_Tp>& matrix,
             int sizeX, int sizeY, int x, int y);

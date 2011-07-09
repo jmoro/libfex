@@ -149,7 +149,10 @@ bool LDAQR<_Tp>::train(Mat_<_Tp> trainingSet, Mat_<int> classes)
     // which would indicate we've got a negative covariance matrix. Throw
     // an exception in that case or return false
 
-    this->logSigma = 2*(MathHelpers::sum1D(SLog));
+    _Tp sumSLog;
+    MathHelpers::sum1D(SLog, sumSLog);
+
+    this->logSigma = 2*(sumSLog);
 
     return true;
 }
@@ -169,19 +172,22 @@ Mat_<int> LDAQR<_Tp>::predict(Mat_<_Tp> observations)
     int j=0;
     for(; itMap != itMap_end; ++itMap)
     {
-
-        A = MathHelpers::meanSubstraction(observations,
-                groupMeans[(*itMap).first])*R;
+    	Mat_<_Tp> sampleNorm;
+    	MathHelpers::meanSubstraction(observations,
+    			groupMeans[(*itMap).first], sampleNorm);
+        A = sampleNorm*R;
 
         multiply(A,A,A);
 
-        D.col(j) = log(priorProb) - (0.5)*(
-                MathHelpers::sum2D(A,MathHelpers::MATH_BY_ROWS) +
-                logSigma);
+        Mat_<_Tp> sumA;
+
+        reduce(A, sumA, 1, CV_REDUCE_SUM);
+
+        D.col(j) = log(priorProb) - (0.5)*(sumA + logSigma);
         j++;
     }
 
-    predictions = MathHelpers::maxIndex(D, this->classLabels);
+    MathHelpers::maxIndex(D, this->classLabels, predictions);
 
     return predictions;
 }
