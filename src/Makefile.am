@@ -15,4 +15,4 @@ include_HEADERS = GaborFilter.hpp \
 libfex_la_SOURCES = DebugHelpers.cpp
 libfex_la_CPPFLAGS = $(OPENCV_CFLAGS) ${TBB_CFLAGS}
 libfex_la_LIBADD = $(OPENCV_LIBS) $(ARMADILLO_LIBS) ${TBB_LIBS}
-libfex_la_LDFLAGS = -version-info 0:1:0
+libfex_la_LDFLAGS = -version-info 0:2:0
