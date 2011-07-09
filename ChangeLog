@@ -1,11 +1,16 @@
-2011-05-05	Javier Moro Sotelo	<javier.moro@udc.es>
+2011-07-09	Javier Moro Sotelo	<javier.moro@udc.es>
 
-	First API design and initial implementation.
+	Added Intel's TBB Library support (via OpenCV).
+	Added new samples.
 
 2011-06-19	Javier Moro Sotelo	<javier.moro@udc.es>
 
 	Removed dependency with Boost.
 	Added dependency with libarmadillo for QR decomposition.
+
+2011-05-05	Javier Moro Sotelo	<javier.moro@udc.es>
+
+	First API design and initial implementation.
 
 --
 Copyright (c) 2011 Javier Moro Sotelo
