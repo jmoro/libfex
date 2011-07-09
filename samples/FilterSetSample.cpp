@@ -19,9 +19,9 @@
  *  Contributors:
  *      Javier Moro Sotelo - initial API and implementation
  ***************************************************************************/
-
 #include "../config.h"
 
+#include "GaborSet.hpp"
 #include "GaborFilter.hpp"
 #include "DebugHelpers.hpp"
 #include "opencv2/opencv.hpp"
@@ -30,31 +30,20 @@ using namespace fex;
 using namespace cv;
 using namespace std;
 
-void gaborFilterTest();
+void gaborFilterSetTest();
 
 int main()
 {
-    gaborFilterTest();
+    gaborFilterSetTest();
     return (0);
 }
 
-void gaborFilterTest()
+void gaborFilterSetTest()
 {
 	double duration;
 	duration = static_cast<double>(cv::getTickCount());
-    GaborFilter<double> filter(8, 5, 120, M_PI/2, 2*M_PI);
+	GaborSet<double> filterSet(5, 8, 120, M_PI/2, 2*M_PI, true);
     duration = static_cast<double>(cv::getTickCount()) - duration;
 	duration /= cv::getTickFrequency();
 	cout << "Elapsed time: " << duration << " seconds." << endl;
-
-    Mat_<Vec2d> f = filter.getFilter();
-
-    DebugHelpers::printMatInformation(f);
-    DebugHelpers::printMatrixValues(f, 5, 5, 0, 0);
-    Mat_<double> real;
-    Mat_<double> imaginary;
-    Mat_<double> planes[] = {real, imaginary};
-    split(f, planes);
-    DebugHelpers::showImage(planes[0]);
-
 }

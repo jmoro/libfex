@@ -22,7 +22,7 @@
 
 #include "../config.h"
 
-#include "GaborFilter.hpp"
+#include "MathHelpers.hpp"
 #include "DebugHelpers.hpp"
 #include "opencv2/opencv.hpp"
 
@@ -30,31 +30,71 @@ using namespace fex;
 using namespace cv;
 using namespace std;
 
-void gaborFilterTest();
+void pcaReduceDataTest();
+Mat_<double> magic5();
+void sum2DTest();
 
 int main()
 {
-    gaborFilterTest();
+	sum2DTest();
     return (0);
 }
 
-void gaborFilterTest()
+void pcaReduceDataTest()
 {
-	double duration;
-	duration = static_cast<double>(cv::getTickCount());
-    GaborFilter<double> filter(8, 5, 120, M_PI/2, 2*M_PI);
-    duration = static_cast<double>(cv::getTickCount()) - duration;
-	duration /= cv::getTickFrequency();
-	cout << "Elapsed time: " << duration << " seconds." << endl;
+	Mat_<double> m5 = magic5();
+	double var = 1.0;
+	Mat_<double> data;
+	Mat_<double> coeff;
 
-    Mat_<Vec2d> f = filter.getFilter();
+	MathHelpers::pcaReduceData(m5, var, data, coeff);
 
-    DebugHelpers::printMatInformation(f);
-    DebugHelpers::printMatrixValues(f, 5, 5, 0, 0);
-    Mat_<double> real;
-    Mat_<double> imaginary;
-    Mat_<double> planes[] = {real, imaginary};
-    split(f, planes);
-    DebugHelpers::showImage(planes[0]);
+	DebugHelpers::printMatInformation(data);
+	DebugHelpers::printMatrixValues(data, 5, 4, 0, 0);
+	DebugHelpers::printMatInformation(coeff);
+	DebugHelpers::printMatrixValues(coeff, 5, 4, 0, 0);
 
 }
+
+void sum2DTest()
+{
+	Mat_<double> m5 = magic5();
+	double result;
+	MathHelpers::sum2D(m5, result);
+
+	cout << "Result: " << result << endl;
+
+}
+
+Mat_<double> magic5()
+{
+    Mat_<double> M(5,5);
+    M(0,0) = 17.0;
+    M(0,1) = 24.0;
+    M(0,2) = 1.0;
+    M(0,3) = 8.0;
+    M(0,4) = 15.0;
+    M(1,0) = 23.0;
+    M(1,1) = 5.0;
+    M(1,2) = 7.0;
+    M(1,3) = 14.0;
+    M(1,4) = 16.0;
+    M(2,0) = 4.0;
+    M(2,1) = 6.0;
+    M(2,2) = 13.0;
+    M(2,3) = 20.0;
+    M(2,4) = 22.0;
+    M(3,0) = 10.0;
+    M(3,1) = 12.0;
+    M(3,2) = 19.0;
+    M(3,3) = 21.0;
+    M(3,4) = 3.0;
+    M(4,0) = 11.0;
+    M(4,1) = 18.0;
+    M(4,2) = 25.0;
+    M(4,3) = 2.0;
+    M(4,4) = 9.0;
+
+    return (M);
+}
+
