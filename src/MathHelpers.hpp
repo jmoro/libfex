@@ -40,13 +40,10 @@ class MathHelpers
 {
 public:
 
-    const static int MATH_BY_ROWS=2;
-    const static int MATH_BY_COLS=4;
-    const static bool MATH_ECON_MODE_ON=true;
-    const static bool MATH_ECON_MODE_OFF=false;
-
-    template<typename _Tp>
-    static Mat_<_Tp> givensRotation(const Mat_<_Tp>& mat, int i, int j);
+    const static int MATH_BY_ROWS = 2;
+    const static int MATH_BY_COLS = 4;
+    const static bool MATH_ECON_MODE_ON = true;
+    const static bool MATH_ECON_MODE_OFF = false;
 
     /*
      * QR Factorization. A=Q*R.
@@ -65,23 +62,24 @@ public:
     static void cumSum(const Mat_<_Tp>& mat, Mat_<_Tp>& sum);
 
     template<typename _Tp>
-    static void stdMean(Mat_<_Tp> mat, _Tp& std, _Tp& mean);
+    static void stdMean(const Mat_<_Tp> mat, _Tp& std, _Tp& mean);
 
     template<typename _Tp>
-    static _Tp sum1D(Mat_<_Tp> mat);
+	static void sum1D(const Mat_<_Tp>& mat, _Tp& dst);
+
+	template<typename _Tp>
+	static void sum2D(const Mat_<_Tp>& mat, _Tp& dst);
 
     template<typename _Tp>
-    static Mat_<_Tp> sum2D(Mat_<_Tp> mat, int type = MATH_BY_ROWS);
-
-    template<typename _Tp>
-    static Mat_<int> maxIndex(Mat_<_Tp> mat,
-            map<int, int> labels = map<int, int>(), int type = MATH_BY_ROWS);
+	static void maxIndex(const Mat_<_Tp>& mat,
+    		map<int, int>& labels, Mat_<int>& dst,
+    		int type = MATH_BY_ROWS);
 
     // TODO: Mow we only accept a mean matrix as a mean matrix for column
-    // dimmension, we sould consider also this method for row dimmension.
+    // dimmension, we sould consider also this method for rows.
     template<typename _Tp>
-    static Mat_<_Tp> meanSubstraction(const Mat_<_Tp>& mat,
-            const Mat& mean);
+    static void meanSubstraction(const Mat_<_Tp>& mat,
+            const Mat_<_Tp>& mean, Mat_<_Tp>& dst, int type = MATH_BY_ROWS);
 
     template<typename _Tp>
     static void meanNormalize(const Mat_<_Tp>& mat,
@@ -95,34 +93,13 @@ public:
     static void pcaReduceData(const Mat_<_Tp>& mat, const _Tp variability,
             Mat_<_Tp>& reducedData, Mat_<_Tp>& coefficients);
 
-    static void createClassifyingConfussionMatrix(
-            const Mat_<int>& expectedResults,
-            const Mat_<int>& results,
-            const int numClasses,
-            Mat_<int>& confussionMatrix);
+    /*
+    template<typename _Tp>
+	static void pcaReduceDataArma(const Mat_<_Tp>& mat,
+			const _Tp variability,	Mat_<_Tp>& reducedData,
+			Mat_<_Tp>& coefficients);
+	*/
 };
-
-template<typename _Tp>
-Mat_<_Tp> MathHelpers::givensRotation(const Mat_<_Tp>& mat, int i, int j)
-{
-    int rows = ((Mat)mat).rows;
-    //CV_ASSERT((i>0) && (j>=0) && (i<rows) && (j<cols));
-    Mat_<_Tp> G = Mat_<_Tp>::eye(rows, rows);
-
-    _Tp a = mat(i-1,j);
-    _Tp b = mat(i,j);
-    _Tp r = sqrt(pow(a,2) + pow(b,2));
-    _Tp c = a/r;
-    _Tp s = -(b/r);
-
-    G(i,i) = c;
-    G(i-1,i) = -s;
-    G(i,i-1) = s;
-    G(i-1,i-1) = c;
-
-    return G;
-}
-
 
 // TODO: Add flags to avoid Q calculation if not needed, and to work in
 // econ mode.
@@ -166,7 +143,7 @@ void MathHelpers::cumSum(const Mat_<_Tp>& mat, Mat_<_Tp>& sum)
 }
 
 template<typename _Tp>
-void MathHelpers::stdMean(Mat_<_Tp> mat, _Tp& std, _Tp& mean)
+void MathHelpers::stdMean(const Mat_<_Tp> mat, _Tp& std, _Tp& mean)
 {
     int rows = ((Mat)mat).rows;
     int cols = ((Mat)mat).cols;
@@ -191,127 +168,105 @@ void MathHelpers::stdMean(Mat_<_Tp> mat, _Tp& std, _Tp& mean)
     std = sqrt(std/(elems - 1));
 }
 
-
 template<typename _Tp>
-_Tp MathHelpers::sum1D(Mat_<_Tp> mat)
+void MathHelpers::sum1D(const Mat_<_Tp>& mat, _Tp& dst)
 {
-    _Tp sumResult = 0.0;
-    int rows = ((Mat)mat).rows;
-    int cols = ((Mat)mat).cols;
+	CV_Assert((mat.cols == 1) || (mat.rows == 1));
 
-    CV_Assert((rows == 1) || (cols == 1));
+	Mat_<_Tp> tmpDst;
 
-    if(rows==1)
-    {
-        for(int i=0; i<cols; i++)
-        {
-            sumResult = sumResult + mat(0,i);
-        }
-    }
-    else
-    {
-        for(int i=0; i<rows; i++)
-        {
-            sumResult = sumResult + mat(i,0);
-        }
-    }
+	int type = (mat.cols == 1) ? 0 : 1;
 
-    return sumResult;
+	reduce(mat, tmpDst, type, CV_REDUCE_SUM);
+
+	dst = tmpDst(0,0);
 }
 
 template<typename _Tp>
-Mat_<_Tp> MathHelpers::sum2D(Mat_<_Tp> mat, int type)
+void MathHelpers::sum2D(const Mat_<_Tp>& mat, _Tp& dst)
 {
-    Mat_<_Tp> sumResult;
-    int rows = ((Mat)mat).rows;
-    int cols = ((Mat)mat).cols;
+	Mat_<_Tp> tmpDst1;
+	Mat_<_Tp> tmpDst2;
 
-    CV_Assert((rows > 1) && (cols > 1));
+	reduce(mat, tmpDst1, 0, CV_REDUCE_SUM);
+	reduce(tmpDst1, tmpDst2, 1, CV_REDUCE_SUM);
 
+	dst = tmpDst2(0,0);
+}
+
+template<typename _Tp>
+void MathHelpers::maxIndex(const Mat_<_Tp>& mat,
+		map<int, int>& labels, Mat_<int>& dst, int type)
+{
+	int rows = ((Mat)mat).rows;
+	int cols = ((Mat)mat).cols;
+	bool hasLabels = !labels.empty();
+	_Tp maxValue;
+
+	CV_Assert((rows > 1) && (cols > 1));
+
+	if(type==MATH_BY_ROWS)
+	{
+		dst = Mat_<int>::zeros(rows,1);
+
+		for(int i=0; i<rows; i++)
+		{
+			maxValue = mat(i,0);
+			dst(i,0) = hasLabels ? labels[1]: 1;
+			for(int j=1; j<cols; j++)
+			{
+				if(mat(i,j) > maxValue)
+				{
+					maxValue = mat(i,j);
+					dst(i,0) = hasLabels ? labels[j+1]: j+1;
+				}
+			}
+		}
+	}
+	else
+	{
+		dst = Mat_<int>::zeros(1,cols);
+		for(int j=0; j<cols; j++)
+		{
+			maxValue = mat(0,j);
+			dst(0,j) = hasLabels ? labels[1]: 1;
+			for(int i=1; i<rows; i++)
+			{
+				if(mat(i,j) > maxValue)
+				{
+					maxValue = mat(i,j);
+					dst(0,j) = hasLabels ? labels[i+1]: i+1;
+				}
+			}
+		}
+	}
+
+}
+
+
+template<typename _Tp>
+void MathHelpers::meanSubstraction(const Mat_<_Tp>& mat,
+        const Mat_<_Tp>& mean, Mat_<_Tp>& dst, int type)
+{
+    mat.copyTo(dst);
     if(type==MATH_BY_ROWS)
-    {
-        sumResult = Mat_<_Tp>::zeros(rows,1);
-        for(int i=0; i<rows; i++)
-        {
-            sumResult(i,0) = sum1D(mat.row(i));
-        }
-    }
+	{
+    	CV_Assert(mean.rows == 1);
+
+		for (int i=0; i<dst.rows; i++)
+		{
+			dst.row(i) = dst.row(i) - mean;
+		}
+	}
     else
     {
-        sumResult = Mat_<_Tp>::zeros(1,cols);
-        for(int i=0; i<cols; i++)
-        {
-            sumResult(0,i) = sum1D(mat.col(i));
-        }
+    	CV_Assert(mean.cols == 1);
+
+    	for (int i=0; i<dst.rows; i++)
+		{
+			dst.col(i) = dst.col(i) - mean;
+		}
     }
-
-    return sumResult;
-}
-
-template<typename _Tp>
-Mat_<int> MathHelpers::maxIndex(Mat_<_Tp> mat, map<int, int> labels,
-        int type)
-{
-    Mat_<int> maxResult;
-    int rows = ((Mat)mat).rows;
-    int cols = ((Mat)mat).cols;
-    bool hasLabels = !labels.empty();
-    _Tp maxValue;
-
-    CV_Assert((rows > 1) && (cols > 1));
-
-    if(type==MATH_BY_ROWS)
-    {
-        maxResult = Mat_<int>::zeros(rows,1);
-        for(int i=0; i<rows; i++)
-        {
-            maxValue = mat(i,0);
-            maxResult(i,0) = hasLabels ? labels[1]: 1;
-            for(int j=1; j<cols; j++)
-            {
-                if(mat(i,j) > maxValue)
-                {
-                    maxValue = mat(i,j);
-                    maxResult(i,0) = hasLabels ? labels[j+1]: j+1;
-                }
-            }
-        }
-    }
-    else
-    {
-        maxResult = Mat_<int>::zeros(1,cols);
-        for(int j=0; j<cols; j++)
-        {
-            maxValue = mat(0,j);
-            maxResult(0,j) = hasLabels ? labels[1]: 1;
-            for(int i=1; i<rows; i++)
-            {
-                if(mat(i,j) > maxValue)
-                {
-                    maxValue = mat(i,j);
-                    maxResult(0,j) = hasLabels ? labels[i+1]: i+1;
-                }
-            }
-        }
-    }
-
-    return maxResult;
-}
-
-
-template<typename _Tp>
-Mat_<_Tp> MathHelpers::meanSubstraction(const Mat_<_Tp>& mat,
-        const Mat& mean)
-{
-    Mat_<_Tp> matCopy(mat.size());
-    mat.copyTo(matCopy);
-    Mat_<_Tp> meanCopy(mean);
-    for (int i=0; i<matCopy.rows; i++)
-    {
-        matCopy.row(i) = matCopy.row(i) - meanCopy;
-    }
-
-    return matCopy;
 }
 
 template<typename _Tp>
@@ -322,7 +277,7 @@ void MathHelpers::meanNormalize(const Mat_<_Tp>& mat,
     Mat_<_Tp> mean;
     reduce(mat, mean, takeRows ? 0 : 1, CV_REDUCE_AVG, mat.type());
 
-    meanNormalizedMat = meanSubstraction(mat, mean);
+    meanSubstraction(mat, mean, meanNormalizedMat);
 }
 
 template<typename _Tp>
@@ -358,11 +313,13 @@ void MathHelpers::pcaReduceData(const Mat_<_Tp>& mat,
 
     //TODO: Calculate number of dimensions needed to achieve certain level of
     // variability.
-
     Mat_<_Tp> cSum;
     Mat_<_Tp> eigenValues = ((Mat)components.eigenvalues).t();
     MathHelpers::cumSum(eigenValues, cSum);
-    _Tp sSum = sum1D(eigenValues);
+
+    _Tp sSum;
+    sum1D(eigenValues, sSum);
+
     Mat_<_Tp> cumVar = cSum / sSum;
 
     int numDimm = ((Mat)mat).rows-1;
@@ -384,33 +341,87 @@ void MathHelpers::pcaReduceData(const Mat_<_Tp>& mat,
     coefficients = ((Mat)coefficients).t();
 }
 
-void MathHelpers::createClassifyingConfussionMatrix(
-            const Mat_<int>& expectedResults,
-            const Mat_<int>& results,
-            const int numClasses,
-            Mat_<int>& confussionMatrix)
+/*
+template<typename _Tp>
+void MathHelpers::pcaReduceDataArma(const Mat_<_Tp>& mat,
+		const _Tp variability, Mat_<_Tp>& reducedData,
+		Mat_<_Tp>& coefficients)
 {
-    CV_Assert((expectedResults.cols == results.cols) &&
-            (expectedResults.rows == results.rows));
+    // We need mat.rows -1 dimmensions as much.
 
-    confussionMatrix.create(numClasses, numClasses);
-    confussionMatrix = Mat_<int>::zeros(numClasses, numClasses);
+	Mat_<_Tp> scores;
+	Mat_<_Tp> tmpCoefficients;
+	Mat_<_Tp> eigenValues;
+	Mat_<_Tp> cSum;
 
-    int* expectedData = (int*) expectedResults.ptr(0);
-    int* actualData = (int*) results.ptr(0);
+	double durationStep;
 
-    int numElements = results.rows * results.cols;
+	cout << "Data conversion: ";
+	durationStep = static_cast<double>(cv::getTickCount());
 
-    for (int index=0; index<numElements; index++)
+	int rows = (Mat(mat)).rows;
+	int cols = (Mat(mat)).cols;
+	Mat_<_Tp> matT = mat.t();
+
+	arma::mat matArma(((cv::Mat)matT).ptr<_Tp>(0), rows, cols, false);
+
+	durationStep = static_cast<double>(cv::getTickCount()) - durationStep;
+	durationStep /= cv::getTickFrequency();
+	cout << durationStep << " seconds." << endl;
+
+	arma::mat score;
+	arma::mat coeff;
+	arma::vec latent;
+
+	cout << "PCA: ";
+	durationStep = static_cast<double>(cv::getTickCount());
+
+	arma::princomp(coeff, score, latent, matArma);
+
+    durationStep = static_cast<double>(cv::getTickCount()) - durationStep;
+	durationStep /= cv::getTickFrequency();
+	cout << durationStep << " seconds." << endl;
+
+	cout << "Data conversion: ";
+	durationStep = static_cast<double>(cv::getTickCount());
+
+	scores = Mat_<_Tp>(score.n_cols, score.n_rows, score.memptr()).t();
+	tmpCoefficients = Mat_<_Tp>(coeff.n_rows, coeff.n_cols, coeff.memptr());
+	eigenValues = Mat_<_Tp>(latent.n_cols, coeff.n_rows, latent.memptr()).t();
+
+	durationStep = static_cast<double>(cv::getTickCount()) - durationStep;
+	durationStep /= cv::getTickFrequency();
+	cout << durationStep << " seconds." << endl;
+
+    cout << "Reduction	: ";
+	durationStep = static_cast<double>(cv::getTickCount());
+
+    MathHelpers::cumSum(eigenValues, cSum);
+    _Tp sSum = sum1D(eigenValues);
+    Mat_<_Tp> cumVar = cSum / sSum;
+
+    int numDimm = ((Mat)mat).rows-1;
+
+    // Break after finding first value
+    for (int i=0; i<((Mat)cumVar).cols; i++)
     {
-        int expeted = *expectedData++;
-        int got = *actualData++;
-
-        // TODO: Normalize classes, so we get convert from ranges
-        confussionMatrix(expeted-1, got-1)++;
+    	if(cumVar(0,i) >= variability)
+    	{
+    		numDimm = i+1;
+    		break;
+    	}
     }
 
+    ((Mat)scores(Range(0, ((Mat)scores).rows),
+            Range(0, numDimm))).copyTo(reducedData);
+    ((Mat)tmpCoefficients(Range(0, numDimm),
+            Range(0, ((Mat)tmpCoefficients).cols))).copyTo(coefficients);
+    coefficients = ((Mat)coefficients).t();
+    durationStep = static_cast<double>(cv::getTickCount()) - durationStep;
+	durationStep /= cv::getTickFrequency();
+	cout << durationStep << " seconds." << endl;
 }
+*/
 
 }
 #endif /* MATHHELPERS_HPP_ */
