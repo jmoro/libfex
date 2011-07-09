@@ -154,7 +154,7 @@ bool LDAQR<_Tp>::train(Mat_<_Tp> trainingSet, Mat_<int> classes)
 
     this->logSigma = 2*(sumSLog);
 
-    return true;
+    return (true);
 }
 
 template <typename _Tp>
@@ -189,7 +189,7 @@ Mat_<int> LDAQR<_Tp>::predict(Mat_<_Tp> observations)
 
     MathHelpers::maxIndex(D, this->classLabels, predictions);
 
-    return predictions;
+    return (predictions);
 }
 
 }

@@ -226,50 +226,44 @@ template<typename _Tp> GaborSet<_Tp>::~GaborSet()
 template<typename _Tp>
 inline int GaborSet<_Tp>::getScales() const
 {
-	return mScales;
+	return (mScales);
 }
 
 template<typename _Tp>
 inline int GaborSet<_Tp>::getOrientations() const
 {
-	return mOrientations;
+	return (mOrientations);
 }
 
 template<typename _Tp>
 inline int GaborSet<_Tp>::getFilterSizeX() const
 {
-	return mFilterSizeX;
+	return (mFilterSizeX);
 }
 
 template<typename _Tp>
 inline int GaborSet<_Tp>::getFilterSizeY() const
 {
-	return mFilterSizeY;
+	return (mFilterSizeY);
 }
 
 template<typename _Tp>
 inline _Tp GaborSet<_Tp>::getKMax() const
 {
-    return mKMax;
+    return (mKMax);
 }
 
 template<typename _Tp>
 inline _Tp GaborSet<_Tp>::getSigma() const
 {
-    return mSigma;
-}
-
-template<typename _Tp>
-inline bool GaborSet<_Tp>::isStartAtScaleZero() const
-{
-	return isStartAtScaleZero();
+    return (mSigma);
 }
 
 template<typename _Tp>
 inline GaborFilter<_Tp>*
 GaborSet<_Tp>::getGaborSet() const
 {
-	return mGaborSet;
+	return (mGaborSet);
 }
 
 /*******************
@@ -314,19 +308,6 @@ void GaborSet<_Tp>::generateGaborSet(GaborFilter<_Tp>* result,
 			mFilterSizeY, mKMax, mSigma, mGaborSet);
 
 	parallel_for(BlockedRange(0, mScales*mOrientations), gaborSetBody);
-
-
-	/*
-
-	for(int i=startScale; i<=stopScale; i++)
-	{
-		for(int j=startOrientation; j<=stopOrientation; j++)
-		{
-			result[pair<int, int>(i,j)] = GaborFilter<_Tp>(i, j, filterSizeX,
-					filterSizeY, kMax, sigma);
-		}
-	}
-	*/
 }
 
 }

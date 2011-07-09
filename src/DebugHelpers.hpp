@@ -178,8 +178,6 @@ void DebugHelpers::showImage(const Mat_<_Tp>& matrix)
 	normalize(matrix, dstMatrix, 0.0, 1.0, cv::NORM_MINMAX);
 	imshow("Image", dstMatrix);
 	waitKey(0);
-
-
 }
 
 }

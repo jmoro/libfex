@@ -150,8 +150,6 @@ void FilteringHelpers::imageApplyGaborSetToMatVector(
         bool needDownSampling, _Tp downSamplingRatio)
 {
 
-    //typedef typename vector<Mat_<_Tp> >::iterator vectorMatrix;
-
     int numFilters = filterSet.getScales() * filterSet.getOrientations();
 
     int numImages = mat.size();
@@ -162,33 +160,11 @@ void FilteringHelpers::imageApplyGaborSetToMatVector(
 
     features.create(numImages, rowFilteredImageSize);
 
-    //vectorMatrix itVec =
-    //       mat.begin(), itVec_end = mat.end();
-
-    //Mat_<double> tmpResult;
-
     ApplyFilterSetBody<_Tp> applyFilterSetBody(numFilters,
     		rowFilteredImageSize, filterSet, needZMUNormalization,
     		needDownSampling, downSamplingRatio, mat, features);
 
     parallel_for(BlockedRange(0, numImages), applyFilterSetBody);
-    /*
-    int i=0;
-    // Iteration over the images to generate the features representing the image
-    for(; itVec != itVec_end; ++itVec)
-    {
-
-       FilteringHelpers::imageApplyGaborSet((*itVec) , filterSet,
-               tmpResult, needZMUNormalization,
-               needDownSampling, downSamplingRatio);
-
-       Mat_<_Tp> tmp = features.row(i);
-
-       ((Mat)tmpResult.reshape(1)).copyTo(tmp);
-
-       i++;
-    }
-    */
 }
 
 template<typename _Tp>

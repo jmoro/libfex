@@ -116,13 +116,13 @@ GaborFeatureSet<_Tp>::~GaborFeatureSet()
 template<typename _Tp>
 inline Mat_<_Tp> GaborFeatureSet<_Tp>::getCoefficients() const
 {
-    return mCoefficients;
+    return (mCoefficients);
 }
 
 template<typename _Tp>
 inline Mat_<_Tp> GaborFeatureSet<_Tp>::getTrainingData() const
 {
-    return mTrainingData;
+    return (mTrainingData);
 }
 
 template<typename _Tp>
@@ -130,9 +130,9 @@ inline Mat_<_Tp> GaborFeatureSet<_Tp>::getFeatures() const
 {
     if(this->mStoreRawFeatures)
     {
-        return mFeatures;
+        return (mFeatures);
     }
-    return Mat_<_Tp>();
+    return (Mat_<_Tp>());
 }
 
 template <typename _Tp>

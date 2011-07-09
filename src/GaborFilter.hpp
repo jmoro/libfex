@@ -266,49 +266,49 @@ template<typename _Tp> GaborFilter<_Tp>::~GaborFilter()
 template<typename _Tp>
 inline int GaborFilter<_Tp>::getScale() const
 {
-    return mScale;
+    return (mScale);
 }
 
 template<typename _Tp>
 inline int GaborFilter<_Tp>::getOrientation() const
 {
-    return mOrientation;
+    return (mOrientation);
 }
 
 template<typename _Tp>
 inline int GaborFilter<_Tp>::getFilterSizeX() const
 {
-    return mFilterSizeX;
+    return (mFilterSizeX);
 }
 
 template<typename _Tp>
 inline int GaborFilter<_Tp>::getFilterSizeY() const
 {
-    return mFilterSizeY;
+    return (mFilterSizeY);
 }
 
 template<typename _Tp>
 inline _Tp GaborFilter<_Tp>::getKMax() const
 {
-    return mKMax;
+    return (mKMax);
 }
 
 template<typename _Tp>
 inline _Tp GaborFilter<_Tp>::getSigma() const
 {
-    return mSigma;
+    return (mSigma);
 }
 
 template<typename _Tp> inline Mat_<complex<_Tp> >
 GaborFilter<_Tp>::getFilter() const
 {
-    return mFilter;
+    return (mFilter);
 }
 
 template<typename _Tp> inline Mat_<Vec<_Tp, 2> >
 GaborFilter<_Tp>::getFilterFFT() const
 {
-    return mFilterFFT;
+    return (mFilterFFT);
 }
 
 /*******************
@@ -364,34 +364,6 @@ void GaborFilter<_Tp>::generateFilter(Mat_<complex<_Tp> > & result,
 
 	parallel_for(BlockedRange(0, numberColumns), gaborFilterBody);
 
-	/*
-	const complex<_Tp> i = sqrt (complex<_Tp>(-1));
-
-	_Tp magnitude;
-	_Tp commonPart;
-	_Tp offsetXVal;
-	_Tp offsetYVal;
-	complex<_Tp> complexTempResult;
-	complex<_Tp> complexResult;
-
-	for (int index=0; index<numberColumns; index++)
-	{
-		offsetXVal = (index/filterSizeY) - offsetX;
-		offsetYVal = (index%filterSizeY) - offsetY;
-
-		magnitude = (offsetXVal)*(offsetXVal) + (offsetYVal)*(offsetYVal);
-
-		commonPart = kS * exp(kSHalf * (magnitude));
-
-		complexTempResult =
-				(exp(1.0*i * ((kReal * offsetYVal) + (kImag * offsetXVal)))
-				- exp(-0.5 * sSquare));
-
-		complexResult = commonPart * complexTempResult;
-
-		*data++ = complexResult;
-	}
-	*/
 }
 
 }
