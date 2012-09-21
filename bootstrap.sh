@@ -23,7 +23,7 @@ set -e
 
 autoscan
 libtoolize --copy --automake
-aclocal -I ./aclocal
+aclocal
 autoheader
 autoconf
 automake --copy --add-missing --foreign
